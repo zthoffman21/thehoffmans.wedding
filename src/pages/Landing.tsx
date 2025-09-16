@@ -21,6 +21,7 @@ export default function Landing() {
                     aria-hidden
                 />
 
+
                 <div className="container-px min-h-[70dvh] sm:min-h-[76dvh] grid place-items-center pt-16 pb-16 sm:pt-24 sm:pb-24">
                     <div className="text-center max-w-3xl">
                         <h1
