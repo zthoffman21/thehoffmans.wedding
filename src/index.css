@@ -1,3 +1,4 @@
+/* Tailwind layers */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,9 +8,9 @@
 
 html, body, #root { height: 100%; }
 
-body { 
+body {
   @apply bg-paper text-ink font-sans antialiased;
-  background: #F2EFE7; /* earthy paper */
+  background: #F2EFE7; /* fallback for when Tailwind isn't loaded yet */
   color: #3C3836;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -26,7 +27,7 @@ html {
 
 img, svg, video, canvas { max-width: 100%; height: auto; }
 
-/* Use a hardcoded color (simpler than theme() here) */
+/* Accessible focus outline */
 :focus-visible {
   outline: 2px solid #D79921;
   outline-offset: 2px;
