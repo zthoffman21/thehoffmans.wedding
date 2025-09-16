@@ -1,34 +1,21 @@
-/* Tailwind layers */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* src/index.css */
+@import "tailwindcss";
 
-/* ----- Global resets & base styles ----- */
+/* Globals */
 :root { color-scheme: light; }
-
 html, body, #root { height: 100%; }
-
 body {
-  @apply bg-paper text-ink font-sans antialiased;
-  background: #F2EFE7; /* fallback for when Tailwind isn't loaded yet */
+  background: #F2EFE7;
   color: #3C3836;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans",
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-::selection { background: rgba(215, 153, 33, 0.25); } /* #D79921 @ 25% */
-
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.container-px { @apply px-4 sm:px-6 lg:px-8; }
-
-img, svg, video, canvas { max-width: 100%; height: auto; }
-
-/* Accessible focus outline */
-:focus-visible {
-  outline: 2px solid #D79921;
-  outline-offset: 2px;
-}
+/* A simple utility you can use in markup */
+.container-px { padding-left: 1rem; padding-right: 1rem; }
+@media (min-width: 640px) { .container-px { padding-left: 1.5rem; padding-right: 1.5rem; } }
+@media (min-width: 1024px){ .container-px { padding-left: 2rem;   padding-right: 2rem; } }

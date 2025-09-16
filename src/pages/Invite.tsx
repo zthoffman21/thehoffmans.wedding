@@ -56,7 +56,7 @@ function Postcard({ code }: { code?: string }) {
                 <div className="absolute inset-2.5 rounded-[12px] border border-neutral-300/70 pointer-events-none" />
 
                 {/* Divider stops above bottom bar (match h-24 on mobile, h-20 on sm+) */}
-                <div className="absolute top-8 bottom-28 sm:bottom-32 left-[55%] -translate-x-1/2 border-l border-neutral-300/70" />
+                <div className="absolute top-8 bottom-28 sm:bottom-36 left-[55%] -translate-x-1/2 border-l border-neutral-300/70" />
 
                 {/* LEFT: centered cursive */}
                 <div className="absolute inset-y-5 left-5 right-[48%] pr-4 grid place-content-center justify-items-center text-center">
@@ -115,7 +115,7 @@ function Postcard({ code }: { code?: string }) {
 
                 {/* BOTTOM: taller on mobile; text wraps; button below it, both centered */}
                 {/* BOTTOM: integrated paper bar with “printed” CTA */}
-                <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 border-t border-neutral-300/70 px-4 grid place-items-center">
+                <div className="absolute inset-x-0 bottom-0 h-24 sm:h-36 border-t border-neutral-300/70 px-4 grid place-items-center">
                     {/* tiny inner shadow under the border to feel pressed */}
 
                     <div className="relative flex flex-col items-center text-center gap-2">
