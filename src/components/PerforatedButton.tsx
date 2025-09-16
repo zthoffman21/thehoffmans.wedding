@@ -5,19 +5,20 @@ export default function PerforatedButton({
   to,
   variant = 'paper', // 'paper' | 'sage' | 'terracotta' | 'ink'
   className = '',
+  arrowColor = '#EA6962',
 }: {
   children: React.ReactNode
   to: string
-  variant?: 'paper' | 'sage' | 'terracotta' | 'ink'
+  variant?: 'paper' | 'postcard' | 'transparent'
   className?: string
+  arrowColor?: string
 }) {
   const tooth = 9
   const palette = {
-    paper:      { bg: '#FAF7EC', text: '#3C3836', border: 'rgba(0,0,0,0.22)', inner1: 'rgba(0,0,0,0.14)', inner2: 'rgba(0,0,0,0.10)', arrow: '#D79921' },
-    sage:       { bg: '#EAF0E2', text: '#2F332F', border: 'rgba(56,68,52,0.22)', inner1: 'rgba(56,68,52,0.14)', inner2: 'rgba(56,68,52,0.10)', arrow: '#7FA466' },
-    terracotta: { bg: '#F3E3DE', text: '#3B2E2B', border: 'rgba(66,38,33,0.24)', inner1: 'rgba(66,38,33,0.14)', inner2: 'rgba(66,38,33,0.10)', arrow: '#C05C4F' },
-    ink:        { bg: '#F1EEE7', text: '#2F2B29', border: 'rgba(0,0,0,0.28)', inner1: 'rgba(0,0,0,0.16)', inner2: 'rgba(0,0,0,0.10)', arrow: '#6B625E' },
-  }[variant]
+    paper:      { bg: '#FAF7EC', text: '#3C3836', border: 'rgba(0,0,0,0.22)', inner1: 'rgba(0,0,0,0.14)', inner2: 'rgba(0,0,0,0.10)', arrow: arrowColor },
+    postcard:   { bg: '#fcfbf7ff', text: '#3C3836', border: 'rgba(0,0,0,0.15)', inner1: 'rgba(0,0,0,0.1)', inner2: 'rgba(0,0,0,0.07)', arrow: arrowColor },
+    transparent:   { bg: '#fcfbf71e', text: '#fcfbf7d8', border: 'rgba(0,0,0,0.30)', inner1: 'rgba(0,0,0,0.20)', inner2: 'rgba(0,0,0,0.10)', arrow: arrowColor },
+}[variant]
 
   return (
     <Link

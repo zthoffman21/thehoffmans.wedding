@@ -35,7 +35,7 @@ export default function Landing() {
                         </p>
 
                         <div className="mt-8 flex items-center justify-center gap-3">
-                            <PerforatedButton to="/rsvp" variant="paper">
+                            <PerforatedButton to="/rsvp" variant="transparent">
                                 RSVP
                             </PerforatedButton>
                         </div>
@@ -85,60 +85,62 @@ export default function Landing() {
 
 /* ---- Reusable paper card (invite-matched) ---- */
 function PaperCard({
-    title,
-    subtitle,
-    accent = "accent",
-    to = "/info",
-    cta = "Learn more",
-    tapeClass = "",
-    children,
+  title,
+  subtitle,
+  accent = "accent",
+  to = "/info",
+  cta = "Learn more",
+  tapeClass = "",
+  children,
 }: {
-    title: string;
-    subtitle?: string;
-    accent?: "accent" | "rose" | "sage";
-    to?: string;
-    cta?: string;
-    tapeClass?: string;
-    children: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  accent?: "accent" | "rose" | "sage";
+  to?: string;
+  cta?: string;
+  tapeClass?: string;
+  children: React.ReactNode;
 }) {
-    const dot = { accent: "#D79921", rose: "#EA6962", sage: "#A7C080" }[accent];
+  const dot = { accent: "#D79921", rose: "#EA6962", sage: "#A7C080" }[accent];
 
-    return (
-        <div className="relative rounded-[16px] border border-neutral-300 bg-[#FAF7EC] shadow-xl overflow-hidden">
+  return (
+    <div className="relative">
+      {/* the actual card; this can keep overflow-hidden for rounded corners */}
+      <div className="relative rounded-[16px] border border-neutral-300 bg-[#FAF7EC] shadow-xl overflow-hidden">
+        {/* printed border inset */}
+        <div className="absolute inset-2 rounded-[12px] border border-neutral-300/70 pointer-events-none z-10" />
 
-            {/* printed border inset */}
-            <div className="absolute inset-2 rounded-[12px] border border-neutral-300/70 pointer-events-none" />
+        {/* paper speckle */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.06] pointer-events-none z-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.5) 1px, transparent 1px), radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.5) 1px, transparent 1px)",
+            backgroundSize: "20px 20px, 22px 22px",
+          }}
+        />
 
-            {/* paper speckle */}
-            <div
-                aria-hidden
-                className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                style={{
-                    backgroundImage:
-                        "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.5) 1px, transparent 1px)," +
-                        "radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.5) 1px, transparent 1px)",
-                    backgroundSize: "20px 20px, 22px 22px",
-                }}
-            />
+        {/* content */}
+        <div className="relative z-20 p-6">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: dot }} />
+            <h3 className="font-serif text-[20px] text-ink">{title}</h3>
+          </div>
+          {subtitle && <p className="mt-1 text-ink/70 text-sm">{subtitle}</p>}
+          <p className="mt-3 text-ink/85">{children}</p>
 
-            <div className="p-6">
-                <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: dot }} />
-                    <h3 className="font-serif text-[20px] text-ink">{title}</h3>
-                </div>
-                {subtitle && <p className="mt-1 text-ink/70 text-sm">{subtitle}</p>}
-                <p className="mt-3 text-ink/85">{children}</p>
-
-                <div className="mt-5">
-                    <PerforatedButton to={to} variant="paper" className="h-10 px-4 text-[14px]">
-                        {cta}
-                    </PerforatedButton>
-                </div>
-            </div>
-                        {/* centered tape (unique offsets/angles per card via props) */}
-            <div className={`absolute ${tapeClass}`}>
-                <TapeZigzag className="h-full w-full" opacity={1} />
-            </div>
+          <div className="mt-5">
+            <PerforatedButton to={to} arrowColor={dot} variant="paper" className="h-10 px-4 text-[14px]">
+              {cta}
+            </PerforatedButton>
+          </div>
         </div>
-    );
+      </div>
+
+      <div className={`absolute ${tapeClass} z-[9999] pointer-events-none`}>
+        <TapeZigzag className="h-full w-full" opacity={1} />
+      </div>
+    </div>
+  );
 }
