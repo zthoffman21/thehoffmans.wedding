@@ -1,0 +1,55 @@
+/* ----- Reusable helpers for the /invite page and beyond ----- */
+
+/* A soft vignette and tint to improve legibility on photos */
+.bg-vignette {
+  background:
+    radial-gradient(70rem 35rem at 50% -10%, rgba(0,0,0,0.18), transparent),
+    linear-gradient(to bottom, rgba(29,32,33,0.18), rgba(29,32,33,0.28));
+}
+
+/* Subtle paper grain overlay for cards/postcards */
+.paper-grain {
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.12'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='33' cy='23' r='1'/%3E%3Ccircle cx='53' cy='53' r='1'/%3E%3Ccircle cx='13' cy='43' r='1'/%3E%3Ccircle cx='43' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Washi-tape look (use with Tailwind for size/position/rotation) */
+.tape {
+  border: 1px solid rgba(0,0,0,0.08);
+  mix-blend-mode: multiply;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.70)),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 6px, rgba(0,0,0,0.03) 6px 12px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  opacity: 0.9;
+  border-radius: 2px;
+}
+
+/* Soft lifted shadow behind cards/postcards */
+.postcard-shadow {
+  filter: blur(16px);
+  background: rgba(0,0,0,0.30);
+  opacity: 0.5;
+  border-radius: 24px;
+}
+
+/* ----- Motion (respects reduced motion) ----- */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-float-in {
+    animation: float-in 400ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .animate-tape-pop {
+    animation: tape-pop 380ms cubic-bezier(.2,.7,.2,1) both;
+  }
+}
+
+@keyframes float-in {
+  from { transform: translateY(12px) scale(.98); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+
+@keyframes tape-pop {
+  from { transform: scale(0.96) rotate(var(--tape-rot, 0deg)); opacity: 0; }
+  to   { transform: scale(1)    rotate(var(--tape-rot, 0deg)); opacity: 1; }
+}

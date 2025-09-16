@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ----- Global resets & base styles ----- */
+:root { color-scheme: light; }
+
+html, body, #root { height: 100%; }
+
+body { 
+  @apply bg-paper text-ink font-sans antialiased;
+  background: #F2EFE7; /* earthy paper */
+  color: #3C3836;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection { background: rgba(215, 153, 33, 0.25); } /* #D79921 @ 25% */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container-px { @apply px-4 sm:px-6 lg:px-8; }
+
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* Use a hardcoded color (simpler than theme() here) */
+:focus-visible {
+  outline: 2px solid #D79921;
+  outline-offset: 2px;
+}
