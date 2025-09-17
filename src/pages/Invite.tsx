@@ -68,6 +68,11 @@ function Postcard({ code }: { code?: string }) {
                         transformOrigin: "top center",
                     }}
                 >
+                    {/* MOBILE: tape that scales with the postcard */}
+                    <div className="lg:hidden pointer-events-none absolute z-[9999] left-15/40 -translate-x-1/2 -top-8">
+                        <Tape className="w-[200px] h-auto z-[9999]" />
+                    </div>
+
                     {/* === Card interior (desktop composition used everywhere, then scaled on mobile) === */}
                     <div
                         className="
@@ -166,14 +171,10 @@ function Postcard({ code }: { code?: string }) {
                 </div>
             </div>
 
-            {/* MOBILE: single centered tape at top */}
-            <div className="md:hidden">
-                <Tape className="left-1/2 -translate-x-1/2 -top-8 h-14 w-48" />
-            </div>
             {/* DESKTOP/TABLET: original two tapes */}
-            <div className="hidden md:block z-[500]">
-                <Tape className="left-6 -top-7 -rotate-6 h-16 w-48" />
-                <Tape className="right-4 -top-8 rotate-6 h-16 w-48" />
+            <div className="hidden lg:block z-[500]">
+                <Tape className="left-6 -top-7 -rotate-12 h-16 w-48" />
+                <Tape className="right-8 -top-8 rotate-10 h-16 w-48" />
             </div>
         </div>
     );
