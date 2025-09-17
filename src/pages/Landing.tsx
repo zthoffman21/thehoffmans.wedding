@@ -22,24 +22,25 @@ export default function Landing() {
         />
 
         <div className="container-px min-h-[70dvh] sm:min-h-[76dvh] grid place-items-center pt-16 pb-16 sm:pt-24 sm:pb-24">
-          <div className="text-center max-w-3xl">
+          <div className="text-center max-w-3xl text-[#F2EFE7] grid gap-5">
             <h1
-              className="text-white drop-shadow text-[clamp(40px,7vw,84px)] leading-[0.95]"
+              className="drop-shadow text-[clamp(40px,7vw,84px)] leading-[0.95]"
               style={{ fontFamily: '"Dancing Script", cursive' }}
             >
               Avery &amp; Zach
             </h1>
-            <p className="mt-3 text-[clamp(16px,2.2vw,20px)] text-white/85">
-              June 2026 • Ohio
-            </p>
-
-            <div className="mt-8 flex items-center justify-center gap-3">
-              <PerforatedButton to="/rsvp" variant="transparent" arrowColor="#ea6962d8">
-                RSVP
-              </PerforatedButton>
-            </div>
+			
+		  	<div className="grid">
+				<p className="text-sm/6 tracking-widest uppercase opacity-90">July 17, 2025 | 5:00 PM</p>
+				<div className="mt-8 flex items-center justify-center">
+				<PerforatedButton to="/rsvp" variant="transparent" arrowColor="#ea6962d8">
+					RSVP
+				</PerforatedButton>
+				</div>
+			</div>
           </div>
         </div>
+
       </div>
 
       {/* Paper cards with centered tapes */}

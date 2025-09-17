@@ -47,17 +47,17 @@ function Postcard({ code }: { code?: string }) {
         "
         style={{
           backgroundImage:
-            "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.05) 1px, transparent 1px)," +
-            "radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.05) 1px, transparent 1px)," +
+            "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.09) 1px, transparent 1px)," +
+            "radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.07) 1px, transparent 1px)," +
             "linear-gradient(0deg, rgba(255,255,255,.55), rgba(255,255,255,.55))",
           backgroundSize: "20px 20px, 22px 22px, auto",
         }}
       >
         {/* Printed border */}
-        <div className="absolute inset-2.5 rounded-[12px] border border-neutral-300/70 pointer-events-none" />
+        <div className="absolute inset-2.5 rounded-[12px] border border-neutral-300/90 pointer-events-none" />
 
         {/* Divider stops above bottom bar */}
-        <div className="absolute top-8 bottom-28 sm:bottom-36 left-[55%] -translate-x-1/2 border-l border-neutral-300/70" />
+        <div className="absolute top-3 bottom-28 sm:bottom-36 left-[55%] -translate-x-1/2 border-l border-neutral-300/90" />
 
         {/* LEFT: centered cursive */}
         <div className="absolute inset-y-5 left-5 right-[48%] pr-4 grid place-content-center justify-items-center text-center">
@@ -88,13 +88,13 @@ function Postcard({ code }: { code?: string }) {
           <div className="relative self-center justify-self-start w-full">
             <div
               aria-hidden="true"
-              className="absolute inset-x-0 -top-2 h-24 opacity-[0.14]"
+              className="absolute inset-x-0 -top-2 h-24 opacity-[0.2]"
               style={{
                 backgroundImage:
                   "repeating-linear-gradient(transparent, transparent 22px, rgba(60,56,54,0.5) 23px)",
               }}
             />
-            <div className="relative text-left">
+            <div className="relative text-left left-2">
               <div className="text-ink/70 text-xs">To:</div>
               <div className="text-ink font-medium text-[15px] leading-tight">
                 Dear Guest
