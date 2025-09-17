@@ -26,7 +26,7 @@ export default function PaperCard({
         <div className="absolute inset-2 rounded-[12px] border border-neutral-300/70 pointer-events-none z-10" />
         <div
           aria-hidden
-          className="absolute inset-0 opacity-[0.06] pointer-events-none z-0"
+          className="absolute inset-0 opacity-[0.15] pointer-events-none z-0"
           style={{
             backgroundImage:
               "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.5) 1px, transparent 1px), radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.5) 1px, transparent 1px)",
