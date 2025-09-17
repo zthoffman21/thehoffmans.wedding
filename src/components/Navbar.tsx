@@ -186,7 +186,7 @@ const tapeUnderline = (active?: boolean) =>
                 onClick={() => setOpen(false)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold
                         text-[#1F1A17] ring-1 ring-[#1F1A17]/15
-                        bg-white/70 hover:bg-white/90 transition"
+                        bg-FAF7EC/70 hover:bg-FAF7EC/90 transition"
                 aria-label="Close menu"
             >
                 Close
