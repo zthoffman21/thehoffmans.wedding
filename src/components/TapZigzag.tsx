@@ -1,7 +1,6 @@
-// src/components/TapeZigzag.tsx
 export default function TapeZigzag({
   className = '',
-  opacity = 0.9, // 0..1
+  opacity = 0.9,
 }: {
   className?: string
   opacity?: number
@@ -16,7 +15,6 @@ export default function TapeZigzag({
     >
       <defs>
         <linearGradient id="tapeShade" x1="0" y1="0" x2="0" y2="1">
-          {/* slightly denser by default; overall opacity still controlled below */}
           <stop offset="0%" stopColor="rgba(255,255,255,0.98)" />
           <stop offset="100%" stopColor="rgba(255,255,255,0.90)" />
         </linearGradient>
@@ -39,12 +37,7 @@ export default function TapeZigzag({
         </filter>
       </defs>
 
-      {/* overall tape opacity is controlled here */}
       <g filter="url(#tapeShadow)" style={{ mixBlendMode: 'multiply', opacity }}>
-        {/* optional warm base tint beneath gradients/stripes */}
-        {/* <rect x="0" y="0" width="320" height="80" fill="#fffdf6" /> */}
-
-        {/* zig-zag ends on the short sides */}
         <path
           d="
             M0 0 L16 0 L12 8 16 16 12 24 16 32 12 40 16 48 12 56 16 64 12 72 16 80 L304 80

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 export default function PerforatedButton({
   children,
   to,
-  variant = 'paper', // 'paper' | 'sage' | 'terracotta' | 'ink'
+  variant = 'paper',
   className = '',
   arrowColor = '#EA6962',
 }: {
@@ -17,8 +17,8 @@ export default function PerforatedButton({
   const palette = {
     paper:      { bg: '#FAF7EC', text: '#3C3836', border: 'rgba(0,0,0,0.22)', inner1: 'rgba(0,0,0,0.14)', inner2: 'rgba(0,0,0,0.10)', arrow: arrowColor },
     postcard:   { bg: '#fcfbf7ff', text: '#3C3836', border: 'rgba(0,0,0,0.15)', inner1: 'rgba(0,0,0,0.1)', inner2: 'rgba(0,0,0,0.07)', arrow: arrowColor },
-    transparent:   { bg: '#fcfbf71e', text: '#fcfbf7d8', border: 'rgba(0,0,0,0.30)', inner1: 'rgba(0,0,0,0.20)', inner2: 'rgba(0,0,0,0.10)', arrow: arrowColor },
-}[variant]
+    transparent:{ bg: '#fcfbf71e', text: '#fcfbf7d8', border: 'rgba(0,0,0,0.30)', inner1: 'rgba(0,0,0,0.20)', inner2: 'rgba(0,0,0,0.10)', arrow: arrowColor },
+  }[variant]
 
   return (
     <Link
@@ -49,7 +49,6 @@ export default function PerforatedButton({
         ].join(','),
       }}
     >
-      {/* double printed inner frame */}
       <span aria-hidden className="pointer-events-none absolute inset-1 rounded-[2px]" style={{ border: `1px solid ${palette.inner1}` }} />
       <span aria-hidden className="pointer-events-none absolute inset-[6px] rounded-[2px]" style={{ border: `1px solid ${palette.inner2}` }} />
       <span className="relative">{children}</span>

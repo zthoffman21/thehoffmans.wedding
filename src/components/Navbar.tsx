@@ -8,12 +8,10 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     );
 
 export default function Navbar() {
-    // ...
     return (
         <header className="sticky top-0 z-40 bg-[#F2EFE7]/85 backdrop-blur supports-[backdrop-filter]:bg-[#F2EFE7]/75 border-b border-ink/10">
             <nav className="container-px">
                 <div className="flex h-16 items-center justify-between">
-                    {/* Earthy cursive logo */}
                     <Link to="/" className="flex items-end gap-2">
                         <span
                             className="leading-none text-[28px] sm:text-[32px]"
@@ -21,7 +19,7 @@ export default function Navbar() {
                         >
                             A&Z
                         </span>
-                        <span className="text-xs tracking-wide text-ink/60">June 2026 • Ohio</span>
+                        <span className="text-xs tracking-wide text-ink/60">July 2026 • Ohio</span>
                     </Link>
 
                     <div className="hidden md:flex items-center gap-2">
@@ -38,8 +36,6 @@ export default function Navbar() {
                             Info
                         </NavLink>
                     </div>
-
-                    {/* mobile button remains as you have it */}
                 </div>
             </nav>
         </header>
