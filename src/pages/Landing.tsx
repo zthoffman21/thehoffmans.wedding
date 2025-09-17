@@ -33,7 +33,7 @@ export default function Landing() {
 		  	<div className="grid">
 				<p className="text-sm/6 tracking-widest uppercase opacity-90">July 17, 2025 | 5:00 PM</p>
 				<div className="mt-8 flex items-center justify-center">
-				<PerforatedButton to="/rsvp" variant="transparent" arrowColor="#ea6962d8">
+				<PerforatedButton to="/rsvp" variant="transparent" arrowColor="#fcfbf7d8">
 					RSVP
 				</PerforatedButton>
 				</div>

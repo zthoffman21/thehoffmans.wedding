@@ -14,7 +14,6 @@ function countdownLabel(targetISO: string) {
     return `In ${days} Days`;
 }
 
-
 export default function NavBar() {
     const [open, setOpen] = useState(false);
     const [elevated, setElevated] = useState(false);
@@ -90,8 +89,13 @@ export default function NavBar() {
                                 className="leading-none text-[28px] sm:text-[32px] text-ink"
                                 style={{ fontFamily: '"Dancing Script", cursive' }}
                             >
-                                A&Z
+                                A
+                                <span className="inline-block text-[.6em] sm:text-[.65em] align-baseline mx-0.5 -translate-y-[2px]">
+                                    &amp;
+                                </span>
+                                Z
                             </span>
+
                             <span
                                 className="text-xs tracking-wide text-ink/60"
                                 aria-label="Countdown to wedding"
@@ -125,7 +129,7 @@ export default function NavBar() {
                         {/* Mobile hamburger */}
                         <button
                             onClick={() => setOpen(true)}
-                            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#1F1A17]/25 bg-[#FAF7EC]/70 hover:bg-white/90"
+                            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#1F1A17]/25 bg-[#FAF7EC]/70 hover:brightness-95"
                             aria-label="Open menu"
                             aria-expanded={open}
                         >
@@ -167,7 +171,7 @@ export default function NavBar() {
                             onClick={() => setOpen(false)}
                             aria-label="Close menu"
                             className="inline-flex h-11 w-11 items-center justify-center
-                    rounded-xl border border-[#1F1A17]/15 bg-[#FAF7EC]/70 hover:bg-[#FAF7EC]/90
+                    rounded-xl border border-[#1F1A17]/15 bg-[#FAF7EC]/70 hover:brightness-95
                     focus:outline-none focus:ring-2 focus:ring-[#1F1A17]/30 active:scale-[0.98]
                     transition"
                         >
