@@ -1,5 +1,5 @@
 import PerforatedButton from "../components/PerforatedButton";
-import TapeZigzag from "../components/TapZigzag";
+import { Tape } from "./Tape";
 
 export default function PaperCard({
   title,
@@ -50,7 +50,7 @@ export default function PaperCard({
       </div>
 
       <div className={`absolute ${tapeClass} z-[500] pointer-events-none`}>
-        <TapeZigzag className="h-full w-full" opacity={1} />
+        <Tape className="h-full w-full"/>
       </div>
     </div>
   );
