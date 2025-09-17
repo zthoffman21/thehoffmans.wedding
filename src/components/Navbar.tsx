@@ -9,13 +9,13 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function Navbar() {
     return (
-        <header className="sticky top-0 z-40 bg-[#F2EFE7]/85 backdrop-blur supports-[backdrop-filter]:bg-[#F2EFE7]/75 border-b border-ink/10">
+        <header className="sticky top-0 z-40 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-[#FAF7EC]/75 border-b border-ink/10">
             <nav className="container-px">
                 <div className="flex h-16 items-center justify-between">
                     <Link to="/" className="flex items-end gap-2">
                         <span
-                            className="leading-none text-[28px] sm:text-[32px]"
-                            style={{ fontFamily: '"Dancing Script", cursive', color: "#3C3836" }}
+                            className="leading-none text-[28px] sm:text-[32px] text-ink"
+                            style={{ fontFamily: '"Dancing Script", cursive' }}
                         >
                             A&Z
                         </span>
