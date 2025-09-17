@@ -111,7 +111,7 @@ export default function InfoPage() {
             <Card>
               <CardHeader icon={<IconLink />} title="Quick Links" />
               <div className="mt-4 flex flex-wrap gap-3">
-                <Link to="/invite">
+                <Link to="https://www.aspenandalston.com/">
                   <PerforatedButton to={"https://www.aspenandalston.com/"} arrowColor="#A7C080">
                     <span>The Venue</span>
                   </PerforatedButton>
