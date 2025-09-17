@@ -48,7 +48,7 @@ export default function Landing() {
           title="What to Expect"
           subtitle="Flow of the day • Dress code"
           accent="accent"
-          to="/info#expect"
+          to="/info"
           cta="Read details"
           tapeClass="left-1/2 -translate-x-1/2 -top-4 rotate-[-4deg] w-32 h-8"
         >
@@ -60,7 +60,7 @@ export default function Landing() {
           title="Travel & Stay"
           subtitle="Nearby hotels & tips"
           accent="sage"
-          to="/info#travel"
+          to="/info"
           cta="Plan your trip"
           tapeClass="left-1/2 -translate-x-1/2 -top-5 rotate-[3deg] w-36 h-8"
         >

@@ -111,11 +111,9 @@ export default function InfoPage() {
             <Card>
               <CardHeader icon={<IconLink />} title="Quick Links" />
               <div className="mt-4 flex flex-wrap gap-3">
-                <Link to="https://www.aspenandalston.com/">
-                  <PerforatedButton to={"https://www.aspenandalston.com/"} arrowColor="#A7C080">
+                <PerforatedButton to={"https://www.aspenandalston.com/"} arrowColor="#A7C080" external={true}>
                     <span>The Venue</span>
-                  </PerforatedButton>
-                </Link>
+                </PerforatedButton>
               </div>
             </Card>
           </div>
@@ -129,7 +127,7 @@ export default function InfoPage() {
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#F7F4EC]/95 shadow-[0_6px_40px_rgba(0,0,0,0.14)] ring-1 ring-black/5 backdrop-blur-sm">
+    <div className="rounded-2xl bg-[#FAF7EC]/95 shadow-[0_6px_40px_rgba(0,0,0,0.14)] ring-1 ring-black/5 backdrop-blur-sm">
       <div className="p-5 sm:p-6">{children}</div>
     </div>
   );
@@ -160,7 +158,7 @@ function TimelineRow({ time, label }: { time: string; label: string }) {
 
 function AttireCard({ title, items }: { title: string; items: string[] }) {
     return (
-        <div className="rounded-xl border border-black/5 bg-white/80 p-4 shadow-sm">
+        <div className="rounded-xl border border-black/5 bg-[#FAF7EC]/95 p-4 shadow-sm">
             <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
             <ul className="mt-2 space-y-1.5 text-sm text-neutral-800">
                 {items.filter((t) => typeof t === 'string' && t.trim().length > 0).map((text, idx) => (

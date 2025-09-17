@@ -3,7 +3,7 @@ import Navbar from "./components/Navbar";
 import Landing from "./pages/Landing";
 import RSVP from "./pages/RSVP";
 import Gallery from "./pages/Gallery";
-import Info from "./pages/Info";
+import Info from "./pages/Expect";
 import Invite from "./pages/Invite";
 
 export default function App() {
