@@ -44,7 +44,10 @@ export default function Landing() {
       </div>
 
       {/* Paper cards with centered tapes */}
-      <div className="container-px -mt-10 sm:-mt-14 pb-20 grid gap-6 sm:grid-cols-3">
+      <div className="container-px -mt-10 sm:-mt-14 pb-20
+                grid grid-cols-1
+                gap-x-6 gap-y-10
+                sm:grid-cols-3 sm:gap-x-6 sm:gap-y-6">
         <PaperCard
           title="What to Expect"
           subtitle="Flow of the day • Dress code"
@@ -74,7 +77,7 @@ export default function Landing() {
           accent="rose"
           to="/gallery"
           cta="View photos"
-          tapeClass="left-1/2 -translate-x-1/2 -top-6 rotate-[1deg] w-28 h-8"
+          tapeClass="left-1/2 -translate-x-1/2 -top-4 rotate-[1deg] w-28 h-8"
         >
           A look at our favorite moments and guest candids—add yours, too!
         </PaperCard>
