@@ -49,7 +49,7 @@ export default function PaperCard({
         </div>
       </div>
 
-      <div className={`absolute ${tapeClass} z-[9999] pointer-events-none`}>
+      <div className={`absolute ${tapeClass} z-[500] pointer-events-none`}>
         <TapeZigzag className="h-full w-full" opacity={1} />
       </div>
     </div>

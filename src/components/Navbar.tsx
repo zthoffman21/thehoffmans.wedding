@@ -57,7 +57,7 @@ const tapeUnderline = (active?: boolean) =>
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-shadow ${
+      className={`sticky top-0 z-999 transition-shadow ${
         elevated ? "shadow-[0_16px_30px_-20px_rgba(0,0,0,0.35)]" : ""
       }`}
     >
@@ -131,51 +131,68 @@ const tapeUnderline = (active?: boolean) =>
 
         {/* Panel */}
         <div
-          className={`absolute right-0 top-0 h-full w-[88%] max-w-sm bg-[${paper}]/95 backdrop-blur-xl shadow-xl transition-transform duration-200 ${
-            open ? "translate-x-0" : "translate-x-full"
-          }`}
-          role="dialog"
-          aria-modal="true"
+        className={`absolute right-0 top-0 h-full w-[88%] max-w-sm
+                    bg-[${paper}]/95 backdrop-blur-xl shadow-xl
+                    transition-transform duration-200
+                    ${open ? "translate-x-0" : "translate-x-full"}
+                    flex flex-col`}   // ⬅️ make it a column
+        role="dialog"
+        aria-modal="true"
         >
-          {/* Taped header */}
-          <div className="p-4">
+        {/* Header */}
+        <div className="p-4">
             <div className="relative rounded-xl border border-black/10 p-3">
-              <div className="font-serif text-lg" style={{ color: ink }}>
+            <div className="font-serif text-lg" style={{ color: ink }}>
                 Menu
-              </div>
             </div>
-          </div>
+            </div>
+        </div>
 
-          <div className="px-3 pb-6">
+        {/* Scrollable content */}
+        <div className="px-3 pb-6 overflow-y-auto">
             <div className="grid gap-1">
-              {links.map((l) => (
+            {links.map((l) => (
                 <NavLink
-                  key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
+                key={l.to}
+                to={l.to}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
                     `${baseLink} ${isActive ? active : idle} ${tapeUnderline(isActive)}`
-                  }
+                }
                 >
-                  {l.label}
+                {l.label}
                 </NavLink>
-              ))}
+            ))}
 
-              <Link
+            <Link
                 to="/rsvp"
                 onClick={() => setOpen(false)}
                 className={`mt-2 ${rsvpBtn}`}
-              >
+            >
                 RSVP
-              </Link>
+            </Link>
             </div>
 
-            {/* Soft note */}
             <div className="mt-6 rounded-xl border border-black/10 p-3 text-xs" style={{ color: ink }}>
-              <span className="font-semibold">Tip:</span> RSVP early to help with
-              seating + dessert counts
+            <span className="font-semibold">Tip:</span> RSVP early to help with seating + dessert counts
             </div>
-          </div>
+        </div>
+
+        {/* Sticky bottom close button */}
+        <div className="mt-auto sticky bottom-0">
+            <div className="border-t border-black/10 bg-[#FAF7EC] backdrop-blur px-4 py-3
+                            pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+            <button
+                onClick={() => setOpen(false)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold
+                        text-[#1F1A17] ring-1 ring-[#1F1A17]/15
+                        bg-white/70 hover:bg-white/90 transition"
+                aria-label="Close menu"
+            >
+                Close
+            </button>
+            </div>
+        </div>
         </div>
       </div>
     </header>
