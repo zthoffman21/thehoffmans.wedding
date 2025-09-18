@@ -51,7 +51,7 @@ type RecItem = {
   price?: "$" | "$$" | "$$$";
   tags?: string[];
   note?: string;
-  avery?: boolean; // ⭐️
+  avery?: boolean;
   mapsQuery?: string;
 };
 
