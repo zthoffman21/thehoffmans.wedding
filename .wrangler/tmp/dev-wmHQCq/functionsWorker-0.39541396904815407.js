@@ -13256,16 +13256,31 @@ var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env, params }) => {
   return json2({ party, members: members.results ?? [] });
 }, "onRequestGet");
 var onRequestGet3 = /* @__PURE__ */ __name2(async ({ env }) => {
+  if (!env.DB) {
+    return new Response(JSON.stringify({
+      ok: false,
+      where: "binding",
+      message: "No D1 binding named 'DB' attached to this Pages environment."
+    }), { status: 500, headers: { "content-type": "application/json; charset=utf-8" } });
+  }
   try {
-    const row = await env.DB.prepare("SELECT 1 AS ok").first();
-    return new Response(JSON.stringify({ ok: true, db: row?.ok === 1 }), {
-      headers: { "content-type": "application/json; charset=utf-8" }
-    });
+    const ping = await env.DB.prepare("SELECT 1 AS ok").first();
+    const table = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('parties','party_fts')"
+    ).first();
+    return new Response(JSON.stringify({
+      ok: true,
+      dbBound: true,
+      dbQuery: ping?.ok === 1,
+      hasCoreTable: !!table?.name,
+      whichTableFound: table?.name ?? null
+    }), { headers: { "content-type": "application/json; charset=utf-8" } });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: "DB unreachable" }), {
-      status: 503,
-      headers: { "content-type": "application/json; charset=utf-8" }
-    });
+    return new Response(JSON.stringify({
+      ok: false,
+      where: "query",
+      message: e.message ?? String(e)
+    }), { status: 500, headers: { "content-type": "application/json; charset=utf-8" } });
   }
 }, "onRequestGet");
 var routes = [

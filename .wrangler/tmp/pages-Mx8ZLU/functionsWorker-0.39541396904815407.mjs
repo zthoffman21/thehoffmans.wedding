@@ -12982,16 +12982,31 @@ var onRequestGet2 = /* @__PURE__ */ __name(async ({ env, params }) => {
 
 // api/health.ts
 var onRequestGet3 = /* @__PURE__ */ __name(async ({ env }) => {
+  if (!env.DB) {
+    return new Response(JSON.stringify({
+      ok: false,
+      where: "binding",
+      message: "No D1 binding named 'DB' attached to this Pages environment."
+    }), { status: 500, headers: { "content-type": "application/json; charset=utf-8" } });
+  }
   try {
-    const row = await env.DB.prepare("SELECT 1 AS ok").first();
-    return new Response(JSON.stringify({ ok: true, db: row?.ok === 1 }), {
-      headers: { "content-type": "application/json; charset=utf-8" }
-    });
+    const ping = await env.DB.prepare("SELECT 1 AS ok").first();
+    const table = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('parties','party_fts')"
+    ).first();
+    return new Response(JSON.stringify({
+      ok: true,
+      dbBound: true,
+      dbQuery: ping?.ok === 1,
+      hasCoreTable: !!table?.name,
+      whichTableFound: table?.name ?? null
+    }), { headers: { "content-type": "application/json; charset=utf-8" } });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: "DB unreachable" }), {
-      status: 503,
-      headers: { "content-type": "application/json; charset=utf-8" }
-    });
+    return new Response(JSON.stringify({
+      ok: false,
+      where: "query",
+      message: e.message ?? String(e)
+    }), { status: 500, headers: { "content-type": "application/json; charset=utf-8" } });
   }
 }, "onRequestGet");
 
@@ -13514,7 +13529,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-cFRTNS/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-fiWHE3/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -13546,7 +13561,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-cFRTNS/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-fiWHE3/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
