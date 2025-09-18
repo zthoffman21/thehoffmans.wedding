@@ -1,14 +1,34 @@
 import React from "react";
 
 /* --------------------------------- Icons --------------------------------- */
-const Icon = ({ path }: { path: string }) => (
-  <svg viewBox="0 0 24 24" aria-hidden className="size-5 fill-none stroke-current">
+const Icon = ({ path, box = "0 0 24 24" }: { path: string; box?: string }) => (
+  <svg viewBox={box} aria-hidden className="size-5 fill-none stroke-current">
     <path d={path} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
-const IconForkKnife = () => <Icon path="M8 3v8M6 3v8a2 2 0 0 0 2 2h0V3m6 0v18m0-10h5" />;
-const IconCoffee = () => <Icon path="M3 10h13a3 3 0 0 1 0 6H6a3 3 0 0 1-3-3V7h14" />;
-const IconHike = () => <Icon path="M9 6a2 2 0 1 1 4 0M7 22l3-8 3 4 4 4M3 22l4-10 4-2" />;
+
+// Restaurants
+const IconFork = () => (
+  <Icon path="M6 3v4 M9 3v4 M12 3v4 M15 3v4 M6 7h9 M10.5 7v12 M9 19h3" />
+);
+
+// Coffee & drinks
+const IconCoffeeCup = () => (
+  <Icon path="M3 8h13a3 3 0 0 1 0 6H6a3 3 0 0 1-3-3V8zm3 10h10M9 4c0 1 .5 1.5 1.2 2M13 4c0 1 .5 1.5 1.2 2" />
+);
+
+// Things to do
+const IconCompass = () => (
+  <Icon path="M11 3a10 9 0 1 0 0 18 9 9 0 0 0 0-18Zm4 4-3 7-7 3 3-7 7-3Z" />
+);
+
+// Hotels & Travel (bed + little plane)
+const IconHotelTravel = () => (
+  <svg viewBox="0 0 24 24" aria-hidden className="size-5 fill-none stroke-current">
+    {/* bed */}
+    <path d="M3 11h18M3 11V8a2 2 0 0 1 2-2h7a3 3 0 0 1 3 3v2m6 0v7H3v-7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 // Filled star (for Avery Recommended)
 const IconStar = () => (
@@ -75,7 +95,7 @@ export default function Guide() {
           <div className="md:col-span-3 space-y-6">
             {/* Restaurants */}
             <Card>
-              <CardHeader icon={<IconForkKnife />} title="Restaurants" subtitle="Date-night spots & casual bites" />
+              <CardHeader icon={<IconFork />} title="Restaurants" subtitle="Date-night spots & casual bites" />
               <div className="mt-5 space-y-4">
                 {restaurants.map((r) => (
                   <ListRow key={r.name} item={r} />
@@ -85,7 +105,7 @@ export default function Guide() {
 
             {/* Activities */}
             <Card>
-              <CardHeader icon={<IconHike />} title="Things to Do" subtitle="Outdoors, museums, and local gems" />
+              <CardHeader icon={<IconCompass />} title="Things to Do" subtitle="Outdoors, museums, and local gems" />
               <div className="mt-5 space-y-4">
                 {activities.map((a) => (
                   <ListRow key={a.name} item={a} />
@@ -98,7 +118,7 @@ export default function Guide() {
           <div className="md:col-span-2 space-y-6">
             {/* Coffee & Drinks */}
             <Card>
-              <CardHeader icon={<IconCoffee />} title="Coffee & Drinks" />
+              <CardHeader icon={<IconCoffeeCup />} title="Coffee & Drinks" />
               <div className="mt-5 space-y-4">
                 {drinks.map((d) => (
                   <ListRow key={d.name} item={d} />
@@ -118,7 +138,7 @@ export default function Guide() {
 
             {/* Hotels & Travel */}
             <Card>
-              <CardHeader title="Hotels & Travel" />
+              <CardHeader icon={<IconHotelTravel />} title="Hotels & Travel" />
               <div className="mt-3 space-y-4 text-sm text-neutral-800">
                 <div>
                   <h3 className="font-semibold">Nearby Hotels</h3>
@@ -220,7 +240,7 @@ function ListRow({ item }: { item: RecItem }) {
 
 const restaurants: RecItem[] = [
   { name: "Dirty Frank's Hot Dog Palace", price: "$", tags: ["Casual", "Downtown"], avery: true, mapsQuery: "Dirty Frank’s Hot Dog Palace, Columbus, OH" },
-  { name: "Yabo’s Tacos", price: "$", tags: ["Tacos", "Casual"], avery: true, mapsQuery: "Yabo's Tacos Polaris, Columbus, OH" },
+  { name: "Yabo's Tacos", price: "$", tags: ["Tacos", "Casual"], avery: true, mapsQuery: "Yabo's Tacos Polaris, Columbus, OH" },
   { name: "North Market", price: "$$", desc: "Classic Columbus food hall with lots of stalls.", tags: ["Food hall", "Downtown"], mapsQuery: "North Market Downtown, Columbus, OH" },
 ];
 
