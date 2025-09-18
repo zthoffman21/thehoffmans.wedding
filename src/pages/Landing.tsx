@@ -64,11 +64,11 @@ export default function Landing() {
           title="Travel & Stay"
           subtitle="Nearby hotels & tips"
           accent="sage"
-          to="/info"
+          to="/guide"
           cta="Plan your trip"
           tapeClass="left-1/2 -translate-x-1/2 -top-5 rotate-[3deg] w-36 h-8"
         >
-          Hotel blocks, local spots we love, parking notes, and airport info.
+          Hotels, local spots we love, and airport info.
         </PaperCard>
 
         <PaperCard

@@ -5,6 +5,7 @@ import RSVP from "./pages/RSVP";
 import Gallery from "./pages/Gallery";
 import Info from "./pages/Info";
 import Invite from "./pages/Invite";
+import Guide from "./pages/Guide";
 
 export default function App() {
     const location = useLocation();
@@ -25,6 +26,7 @@ export default function App() {
                     <Route path="/rsvp" element={<RSVP />} />
                     <Route path="/gallery" element={<Gallery />} />
                     <Route path="/info" element={<Info />} />
+                    <Route path="/guide" element={<Guide />} />
                 </Routes>
             </main>
         </div>
