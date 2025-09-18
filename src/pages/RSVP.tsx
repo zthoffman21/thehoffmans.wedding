@@ -458,7 +458,7 @@ function ConfirmationSection({ partyId, onReset }: { partyId: string; onReset: (
         <section className="mx-auto max-w-2xl px-4 py-14 text-center">
             <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm">
                 <div
-                    className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-emerald-50"
+                    className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-[#A7C080]"
                     aria-hidden
                 />
                 <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
