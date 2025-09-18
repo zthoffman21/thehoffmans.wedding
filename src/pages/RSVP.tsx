@@ -493,7 +493,7 @@ function ReminderToggle({
             <div className="flex items-center justify-between gap-3">
                 {" "}
                 <div>
-                    <h3 className="font-medium text-ink">Email reminder</h3>
+                    <h3 className="font-medium text-ink">Email reminders</h3>
                     <p className="mt-1 text-xs text-ink/60">
                         We'll send gentle reminders to{" "}
                         <span className="font-medium">{email || "—"}</span>.
