@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS parties (
   contact_email TEXT,
   contact_phone TEXT,
   notes TEXT,
-  can_rsvp INTEGER NOT NULL DEFAULT 1,  -- 1 = allowed to submit; 0 = blocked
-  rsvp_deadline DATETIME,               -- optional: cutoff date/time
+  can_rsvp INTEGER NOT NULL DEFAULT 1,
+  rsvp_deadline DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -20,12 +20,12 @@ CREATE TABLE IF NOT EXISTS members (
   id TEXT PRIMARY KEY,
   party_id TEXT NOT NULL REFERENCES parties(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
-  is_plus_one INTEGER NOT NULL DEFAULT 0,  -- 0/1
-  plus_one_for TEXT,                        -- optional: “for whom” if known
+  is_plus_one INTEGER NOT NULL DEFAULT 0,
+  plus_one_for TEXT,
   sort_order INTEGER DEFAULT 0,
-  -- Per-event invite flags (so you can invite someone to only ceremony or only reception)
-  invite_ceremony INTEGER NOT NULL DEFAULT 1,   -- 0/1
-  invite_reception INTEGER NOT NULL DEFAULT 1   -- 0/1
+
+  invite_ceremony INTEGER NOT NULL DEFAULT 1,
+  invite_reception INTEGER NOT NULL DEFAULT 1
 );
 
 -- Current attendance snapshot for quick reads (the “latest status”)
