@@ -13226,10 +13226,7 @@ Submission ID: ${submissionId}
   );
   return json2({ ok: true, submissionId });
 }, "onRequestPost");
-var onRequestGet = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const url2 = new URL(request.url);
-  const q = (url2.searchParams.get("q") || "").trim();
-  if (!q) return json2({ results: [] });
+async function searchFTS(env, q) {
   const stmt = env.DB.prepare(
     `SELECT f.party_id AS id, p.display_name AS label
      FROM party_fts f
@@ -13238,9 +13235,48 @@ var onRequestGet = /* @__PURE__ */ __name2(async ({ env, request }) => {
      LIMIT 10`
   ).bind(q.replace(/\s+/g, " "));
   const { results } = await stmt.all();
-  return json2({ results: results ?? [] });
-}, "onRequestGet");
-var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env, params }) => {
+  return results ?? [];
+}
+__name(searchFTS, "searchFTS");
+__name2(searchFTS, "searchFTS");
+async function searchLike(env, q) {
+  const like = `%${q.replace(/\s+/g, "%")}%`;
+  const { results } = await env.DB.prepare(
+    `SELECT p.id AS id, p.display_name AS label
+     FROM parties p
+     WHERE p.display_name LIKE ?
+     ORDER BY p.display_name
+     LIMIT 10`
+  ).bind(like).all();
+  return results ?? [];
+}
+__name(searchLike, "searchLike");
+__name2(searchLike, "searchLike");
+async function handleGet(env, request) {
+  const url2 = new URL(request.url);
+  const q = (url2.searchParams.get("q") || "").trim();
+  if (!q) return json2({ results: [] });
+  try {
+    const results = await searchFTS(env, q);
+    return json2({ results });
+  } catch (e) {
+    try {
+      const results = await searchLike(env, q);
+      return json2({ results, fallback: "like" });
+    } catch (e2) {
+      return json2({ error: "search failed", detail: String(e2) }, 500);
+    }
+  }
+}
+__name(handleGet, "handleGet");
+__name2(handleGet, "handleGet");
+var onRequest = /* @__PURE__ */ __name2(async ({ env, request }) => {
+  if (request.method === "GET" || request.method === "HEAD" || request.method === "POST") {
+    return handleGet(env, request);
+  }
+  return json2({ error: "Method not allowed" }, 405);
+}, "onRequest");
+var onRequestGet = /* @__PURE__ */ __name2(async ({ env, params }) => {
   const id = String(params.id);
   const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes FROM parties WHERE id = ?`).bind(id).first();
   if (!party) return json2({ error: "Not found" }, 404);
@@ -13255,7 +13291,7 @@ var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env, params }) => {
   ).bind(id).all();
   return json2({ party, members: members.results ?? [] });
 }, "onRequestGet");
-var onRequestGet3 = /* @__PURE__ */ __name2(async ({ env }) => {
+var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env }) => {
   if (!env.DB) {
     return new Response(JSON.stringify({
       ok: false,
@@ -13294,23 +13330,23 @@ var routes = [
   {
     routePath: "/api/party/search",
     mountPath: "/api/party",
-    method: "GET",
+    method: "",
     middlewares: [],
-    modules: [onRequestGet]
+    modules: [onRequest]
   },
   {
     routePath: "/api/party/:id",
     mountPath: "/api/party/:id",
     method: "GET",
     middlewares: [],
-    modules: [onRequestGet2]
+    modules: [onRequestGet]
   },
   {
     routePath: "/api/health",
     mountPath: "/api",
     method: "GET",
     middlewares: [],
-    modules: [onRequestGet3]
+    modules: [onRequestGet2]
   }
 ];
 function lexer(str) {

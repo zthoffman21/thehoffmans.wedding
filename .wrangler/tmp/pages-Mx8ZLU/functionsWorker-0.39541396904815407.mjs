@@ -12948,10 +12948,7 @@ Submission ID: ${submissionId}
 }, "onRequestPost");
 
 // api/party/search.ts
-var onRequestGet = /* @__PURE__ */ __name(async ({ env, request }) => {
-  const url2 = new URL(request.url);
-  const q = (url2.searchParams.get("q") || "").trim();
-  if (!q) return json2({ results: [] });
+async function searchFTS(env, q) {
   const stmt = env.DB.prepare(
     `SELECT f.party_id AS id, p.display_name AS label
      FROM party_fts f
@@ -12960,11 +12957,47 @@ var onRequestGet = /* @__PURE__ */ __name(async ({ env, request }) => {
      LIMIT 10`
   ).bind(q.replace(/\s+/g, " "));
   const { results } = await stmt.all();
-  return json2({ results: results ?? [] });
-}, "onRequestGet");
+  return results ?? [];
+}
+__name(searchFTS, "searchFTS");
+async function searchLike(env, q) {
+  const like = `%${q.replace(/\s+/g, "%")}%`;
+  const { results } = await env.DB.prepare(
+    `SELECT p.id AS id, p.display_name AS label
+     FROM parties p
+     WHERE p.display_name LIKE ?
+     ORDER BY p.display_name
+     LIMIT 10`
+  ).bind(like).all();
+  return results ?? [];
+}
+__name(searchLike, "searchLike");
+async function handleGet(env, request) {
+  const url2 = new URL(request.url);
+  const q = (url2.searchParams.get("q") || "").trim();
+  if (!q) return json2({ results: [] });
+  try {
+    const results = await searchFTS(env, q);
+    return json2({ results });
+  } catch (e) {
+    try {
+      const results = await searchLike(env, q);
+      return json2({ results, fallback: "like" });
+    } catch (e2) {
+      return json2({ error: "search failed", detail: String(e2) }, 500);
+    }
+  }
+}
+__name(handleGet, "handleGet");
+var onRequest = /* @__PURE__ */ __name(async ({ env, request }) => {
+  if (request.method === "GET" || request.method === "HEAD" || request.method === "POST") {
+    return handleGet(env, request);
+  }
+  return json2({ error: "Method not allowed" }, 405);
+}, "onRequest");
 
 // api/party/[id]/index.ts
-var onRequestGet2 = /* @__PURE__ */ __name(async ({ env, params }) => {
+var onRequestGet = /* @__PURE__ */ __name(async ({ env, params }) => {
   const id = String(params.id);
   const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes FROM parties WHERE id = ?`).bind(id).first();
   if (!party) return json2({ error: "Not found" }, 404);
@@ -12981,7 +13014,7 @@ var onRequestGet2 = /* @__PURE__ */ __name(async ({ env, params }) => {
 }, "onRequestGet");
 
 // api/health.ts
-var onRequestGet3 = /* @__PURE__ */ __name(async ({ env }) => {
+var onRequestGet2 = /* @__PURE__ */ __name(async ({ env }) => {
   if (!env.DB) {
     return new Response(JSON.stringify({
       ok: false,
@@ -13022,23 +13055,23 @@ var routes = [
   {
     routePath: "/api/party/search",
     mountPath: "/api/party",
-    method: "GET",
+    method: "",
     middlewares: [],
-    modules: [onRequestGet]
+    modules: [onRequest]
   },
   {
     routePath: "/api/party/:id",
     mountPath: "/api/party/:id",
     method: "GET",
     middlewares: [],
-    modules: [onRequestGet2]
+    modules: [onRequestGet]
   },
   {
     routePath: "/api/health",
     mountPath: "/api",
     method: "GET",
     middlewares: [],
-    modules: [onRequestGet3]
+    modules: [onRequestGet2]
   }
 ];
 
@@ -13529,7 +13562,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-fiWHE3/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-t9fQYu/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -13561,7 +13594,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-fiWHE3/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-t9fQYu/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

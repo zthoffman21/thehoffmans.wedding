@@ -1,5 +1,5 @@
 import { onRequestPost as __api_party__id__submit_ts_onRequestPost } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\[id]\\submit.ts"
-import { onRequestGet as __api_party_search_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\search.ts"
+import { onRequest as __api_party_search_ts_onRequest } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\search.ts"
 import { onRequestGet as __api_party__id__index_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\[id]\\index.ts"
 import { onRequestGet as __api_health_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\health.ts"
 
@@ -14,9 +14,9 @@ export const routes = [
   {
       routePath: "/api/party/search",
       mountPath: "/api/party",
-      method: "GET",
+      method: "",
       middlewares: [],
-      modules: [__api_party_search_ts_onRequestGet],
+      modules: [__api_party_search_ts_onRequest],
     },
   {
       routePath: "/api/party/:id",
