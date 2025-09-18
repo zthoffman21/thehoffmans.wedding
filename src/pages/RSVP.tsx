@@ -1,104 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
-
-// ------------------------------------------------------------
-// RSVP Page UI (v1)
-// - Matches the soft, paper-card aesthetic we used elsewhere
-// - Flow: Search → Party Details → Review & Submit → Confirmation
-// - Uses temporary in-memory mock API; replace with real endpoints later
-// - Mobile-first; sticky review bar; keyboard- and screen-reader-friendly
-// ------------------------------------------------------------
-
-// ----------------------------- Types -----------------------------
-export type Member = {
-    id: string;
-    fullName: string;
-    isPlusOne?: boolean; // known plus-ones are explicit Members
-    invitedEvents: string[]; // e.g., ["ceremony", "reception"]
-    attending: Record<string, boolean>; // { ceremony: true/false, reception: true/false }
-    dietary?: string;
-    notes?: string;
-};
-
-export type Party = {
-    id: string;
-    displayName: string; // e.g., "David Hoffman Family" or "Avery Tucker"
-    contact: {
-        email?: string;
-        phone?: string;
-    };
-    members: Member[];
-    reminderOptIn?: boolean;
-};
-
-// ------------------------- Mock API Layer -------------------------
-// Replace these with real calls to your Cloudflare D1-backed API later.
-const MOCK_DB: Party[] = [
-    {
-        id: "party_dhoffman",
-        displayName: "David Hoffman Family",
-        contact: { email: "david@example.com", phone: "610-555-1299" },
-        members: [
-            {
-                id: "m1",
-                fullName: "David Hoffman",
-                invitedEvents: ["ceremony", "reception"],
-                attending: { ceremony: false, reception: false },
-            },
-            {
-                id: "m2",
-                fullName: "Courtney Hoffman",
-                invitedEvents: ["ceremony", "reception"],
-                attending: { ceremony: false, reception: false },
-            },
-            {
-                id: "m3",
-                fullName: "Matthew Hoffman",
-                invitedEvents: ["ceremony"],
-                attending: { ceremony: false },
-            },
-        ],
-        reminderOptIn: false,
-    },
-    {
-        id: "party_avery",
-        displayName: "Avery Tucker (+1)",
-        contact: { email: "avery@example.com" },
-        members: [
-            {
-                id: "m4",
-                fullName: "Avery Tucker",
-                invitedEvents: ["ceremony", "reception"],
-                attending: { ceremony: false, reception: false },
-            },
-            {
-                id: "m5",
-                fullName: "Plus One (Zachary Hoffman)",
-                isPlusOne: true,
-                invitedEvents: ["ceremony", "reception"],
-                attending: { ceremony: false, reception: false },
-            },
-        ],
-        reminderOptIn: false,
-    },
-];
-
-async function mockSearchParties(query: string): Promise<Party[]> {
-    await new Promise((r) => setTimeout(r, 250));
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return MOCK_DB.filter((p) => p.displayName.toLowerCase().includes(q));
-}
-
-async function mockGetPartyById(id: string): Promise<Party | null> {
-    await new Promise((r) => setTimeout(r, 200));
-    return MOCK_DB.find((p) => p.id === id) ?? null;
-}
-
-// Pretend submit; echo the payload
-async function mockSubmitRSVP(payload: Party): Promise<{ ok: boolean; id: string }> {
-    await new Promise((r) => setTimeout(r, 500));
-    return { ok: true, id: payload.id };
-}
+import { useEffect, useMemo, useState } from "react";
+import {
+    searchParties as apiSearchParties,
+    getPartyById as apiGetPartyById,
+    submitRSVP as apiSubmitRSVP,
+    type Party,
+    type Member,
+    type RSVPPost,
+} from "../api/rsvp";
 
 // --------------------------- Utilities ---------------------------
 function classNames(...parts: (string | false | undefined)[]) {
@@ -119,20 +27,31 @@ function formatEventLabel(key: string) {
 // ---------------------------- UI Parts ---------------------------
 function SearchSection({ onPick }: { onPick: (id: string) => void }) {
     const [q, setQ] = useState("");
-    const [results, setResults] = useState<Party[] | null>(null);
+    const [results, setResults] = useState<Array<{ id: string; label: string }> | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const handle = setTimeout(async () => {
-            if (!q.trim()) {
+            const query = q.trim();
+            if (!query) {
                 setResults(null);
+                setError(null);
                 return;
             }
-            setLoading(true);
-            const res = await mockSearchParties(q);
-            setResults(res);
-            setLoading(false);
-        }, 250);
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await apiSearchParties(query);
+                setResults(res);
+            } catch {
+                setError("Search failed. Please try again.");
+                setResults([]);
+            } finally {
+                setLoading(false);
+            }
+        }, 250); // debounce to avoid spamming the API
+
         return () => clearTimeout(handle);
     }, [q]);
 
@@ -157,12 +76,10 @@ function SearchSection({ onPick }: { onPick: (id: string) => void }) {
                             aria-label="Search name"
                         />
                         <button
-                            onClick={() => void 0}
-                            className="
-							hidden rounded-xl bg-ink px-4 py-3 text-ink sm:block
-							transition duration-200 ease-out
-							hover:bg-ink/5 hover:-translate-y-[1px]
-							"
+                            onClick={() => {
+                                /* no-op; search happens as you type */
+                            }}
+                            className="hidden rounded-xl bg-ink px-4 py-3 text-ink sm:block transition duration-200 ease-out hover:bg-ink/5 hover:-translate-y-[1px]"
                             aria-hidden
                         >
                             Search
@@ -171,7 +88,12 @@ function SearchSection({ onPick }: { onPick: (id: string) => void }) {
 
                     <div className="mt-6">
                         {loading && <div className="text-sm text-ink/70">Searching…</div>}
-                        {results && results.length === 0 && !loading && (
+                        {error && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {error}
+                            </div>
+                        )}
+                        {results && results.length === 0 && !loading && !error && (
                             <div className="rounded-xl border border-ink/10 bg-amber-50 p-4 text-sm text-ink">
                                 We couldn't find a match. Try a different variation or reach out to
                                 us.
@@ -183,26 +105,10 @@ function SearchSection({ onPick }: { onPick: (id: string) => void }) {
                                     <li key={p.id} className="group bg-[#FAF7EC]/70 backdrop-blur">
                                         <button
                                             onClick={() => onPick(p.id)}
-                                            className="
-            flex w-full items-center justify-between px-4 py-3
-            text-left
-            transition
-            duration-200
-            ease-out
-            hover:bg-ink/5
-            hover:shadow-sm
-            hover:-translate-y-[1px]
-            focus-visible:outline-none
-            focus-visible:ring-2
-            focus-visible:ring-accent/60
-            focus-visible:ring-offset-2
-            focus-visible:ring-offset-[#FAF7EC]
-          "
+                                            className="flex w-full items-center justify-between px-4 py-3 text-left transition duration-200 ease-out hover:bg-ink/5 hover:shadow-sm hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7EC]"
                                         >
-                                            <span className="text-ink">{p.displayName}</span>
-                                            <span className="text-xs text-ink/60">
-                                                {p.members.length} guest(s)
-                                            </span>
+                                            <span className="text-ink">{p.label}</span>
+                                            {/* If you want a member count here, extend the API to include it */}
                                         </button>
                                     </li>
                                 ))}
@@ -398,9 +304,37 @@ function PartySection({
 
     async function handleSubmit() {
         setSubmitting(true);
-        const res = await mockSubmitRSVP(party);
-        setSubmitting(false);
-        if (res.ok) onSubmitted(res.id);
+        try {
+            const payload: RSVPPost = {
+                contact: {
+                    email: party.contact.email,
+                    phone: party.contact.phone,
+                },
+                members: party.members.map((m) => ({
+                    memberId: m.id,
+                    attending: {
+                        ceremony: m.invitedEvents.includes("ceremony")
+                            ? !!m.attending.ceremony
+                            : null,
+                        reception: m.invitedEvents.includes("reception")
+                            ? !!m.attending.reception
+                            : null,
+                    },
+                    dietary: m.dietary,
+                })),
+                notes: party.members
+                    .map((m) => (m.notes ? `${m.fullName}: ${m.notes}` : null))
+                    .filter(Boolean)
+                    .join(" | "),
+            };
+
+            const res = await apiSubmitRSVP(party.id, payload);
+            if (res.ok) onSubmitted(res.submissionId);
+        } catch (e) {
+            alert("Submit failed. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     return (
@@ -540,7 +474,7 @@ export default function RSVP() {
     async function handlePick(id: string) {
         setPartyId(id);
         setLoadingParty(true);
-        const p = await mockGetPartyById(id);
+        const p = await apiGetPartyById(id);
         setParty(p ?? null);
         setLoadingParty(false);
         if (p) setStep("party");

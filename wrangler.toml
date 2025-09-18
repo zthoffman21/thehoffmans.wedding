@@ -1,0 +1,13 @@
+name = "thehoffmans-wedding-local"
+compatibility_date = "2025-09-15"
+
+# So `wrangler pages dev` knows your output dir
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wedding_rsvp"
+database_id = "LOCAL"
+
+[dev]
+port = 8787

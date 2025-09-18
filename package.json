@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "...optional..."
+    "test": "...optional...",
+    "dev:pages": "wrangler pages dev --d1 DB=wedding_rsvp -- npm run dev",
+    "dev:static": "npm run build && wrangler pages dev dist --d1 DB=wedding_rsvp",
+    "d1:local:setup": "wrangler d1 execute wedding_rsvp --local --file=schema.sql && wrangler d1 execute wedding_rsvp --local --file=seed.sql"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -17,6 +20,7 @@
     "react-router-dom": "^7.9.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250918.0",
     "@eslint/js": "^9.33.0",
     "@tailwindcss/cli": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
