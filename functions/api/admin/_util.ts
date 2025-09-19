@@ -2,7 +2,7 @@
 export type Env = {
   DB: D1Database;
   ACCESS_AUD: string;
-  ACCESS_ISSUER: string; // if you later want full JWKS validation
+  ACCESS_ISSUER: string;
 };
 
 type Role = 'owner' | 'editor' | 'viewer';

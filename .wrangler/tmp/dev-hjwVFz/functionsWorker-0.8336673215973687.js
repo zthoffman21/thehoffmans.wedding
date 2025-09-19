@@ -13434,32 +13434,7 @@ Submission ID: ${submissionId}
     );
   }
 }, "onRequestPost");
-var ORDER = { viewer: 1, editor: 2, owner: 3 };
-function json3(data, init) {
-  return new Response(JSON.stringify(data), {
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    ...init
-  });
-}
-__name(json3, "json3");
-__name2(json3, "json");
-async function requireAdmin(request, env, minRole) {
-  const jwt2 = request.headers.get("CF-Access-Jwt-Assertion");
-  if (!jwt2) return new Response("Unauthorized", { status: 401 });
-  const claims = JSON.parse(atob(jwt2.split(".")[1] || ""));
-  if (claims?.aud !== env.ACCESS_AUD || !claims?.email) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const email3 = String(claims.email).toLowerCase();
-  const row = await env.DB.prepare(`SELECT role FROM admin_users WHERE email = ? LIMIT 1`).bind(email3).first();
-  if (!row || ORDER[row.role] < ORDER[minRole]) return new Response("Forbidden", { status: 403 });
-  return { email: email3, role: row.role };
-}
-__name(requireAdmin, "requireAdmin");
-__name2(requireAdmin, "requireAdmin");
 var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
   const url2 = new URL(request.url);
   const scope = url2.searchParams.get("scope") || "members";
   const headers = new Headers({
@@ -13509,9 +13484,15 @@ var onRequestGet2 = /* @__PURE__ */ __name2(async ({ env, request }) => {
   });
   return new Response(stream, { headers });
 }, "onRequestGet");
-var onRequestGet3 = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
+function json3(data, init) {
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    ...init
+  });
+}
+__name(json3, "json3");
+__name2(json3, "json");
+var onRequestGet3 = /* @__PURE__ */ __name2(async ({ env }) => {
   const membersNoRSVP = await env.DB.prepare(
     `SELECT m.id AS member_id, m.full_name, p.id AS party_id, p.display_name
      FROM members m
@@ -13536,9 +13517,7 @@ var onRequestGet3 = /* @__PURE__ */ __name2(async ({ env, request }) => {
     partiesNoRSVP: partiesNoRSVP.results ?? []
   });
 }, "onRequestGet");
-var onRequestGet4 = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
+var onRequestGet4 = /* @__PURE__ */ __name2(async ({ env }) => {
   const parties = await env.DB.prepare(`SELECT COUNT(*) AS c FROM parties`).first();
   const members = await env.DB.prepare(`SELECT COUNT(*) AS c FROM members`).first();
   const submissions = await env.DB.prepare(`SELECT COUNT(*) AS c FROM rsvp_submissions`).first();
@@ -13560,8 +13539,6 @@ var onRequestGet4 = /* @__PURE__ */ __name2(async ({ env, request }) => {
   });
 }, "onRequestGet");
 var onRequestGet5 = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
   const url2 = new URL(request.url);
   const q = (url2.searchParams.get("q") || "").trim();
   const limit = Math.min(parseInt(url2.searchParams.get("limit") || "25", 10), 100);
@@ -13580,8 +13557,6 @@ var onRequestGet5 = /* @__PURE__ */ __name2(async ({ env, request }) => {
   return json3({ items: res.results ?? [], nextOffset: (res.results?.length ?? 0) === limit ? offset + limit : null });
 }, "onRequestGet");
 var onRequestGet6 = /* @__PURE__ */ __name2(async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
   const url2 = new URL(request.url);
   const limit = Math.min(parseInt(url2.searchParams.get("limit") || "25", 10), 100);
   const cursor = url2.searchParams.get("cursor");

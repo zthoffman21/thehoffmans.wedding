@@ -1,8 +1,6 @@
-import { requireAdmin, type Env } from "./_util";
+import { type Env } from "./_util";
 
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, 'viewer');
-  if (gate instanceof Response) return gate;
 
   const url = new URL(request.url);
   const scope = url.searchParams.get('scope') || 'members'; // 'members' | 'parties' | 'submissions'

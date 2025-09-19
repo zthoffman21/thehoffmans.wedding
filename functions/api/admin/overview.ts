@@ -1,9 +1,6 @@
-// functions/api/admin/overview.ts
-import { requireAdmin, json, type Env } from "./_util";
+import { json, type Env } from "./_util";
 
-export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
-  const gate = await requireAdmin(request, env, "viewer");
-  if (gate instanceof Response) return gate;
+export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
 
   const parties = await env.DB
     .prepare(`SELECT COUNT(*) AS c FROM parties`)
