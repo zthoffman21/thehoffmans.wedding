@@ -1,10 +1,16 @@
--- =========================
--- Core tables
--- =========================
+DROP VIEW IF EXISTS v_party_members;
 
--- One row per invite/household (e.g., "David Hoffman Family", "Avery Tucker")
+DROP TABLE IF EXISTS member_attendance_current;
+DROP TABLE IF EXISTS rsvp_submissions;
+DROP TABLE IF EXISTS members;
+DROP TABLE IF EXISTS party_fts;
+DROP TABLE IF EXISTS idempotency;
+DROP TABLE IF EXISTS rate_log;
+DROP TABLE IF EXISTS parties;
+
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
   display_name TEXT NOT NULL,
   contact_email TEXT,
   contact_phone TEXT,
@@ -15,7 +21,6 @@ CREATE TABLE IF NOT EXISTS parties (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- One row per person tied to a party
 CREATE TABLE IF NOT EXISTS members (
   id TEXT PRIMARY KEY,
   party_id TEXT NOT NULL REFERENCES parties(id) ON DELETE CASCADE,
@@ -23,20 +28,17 @@ CREATE TABLE IF NOT EXISTS members (
   is_plus_one INTEGER NOT NULL DEFAULT 0,
   plus_one_for TEXT,
   sort_order INTEGER DEFAULT 0,
-
   invite_ceremony INTEGER NOT NULL DEFAULT 1,
   invite_reception INTEGER NOT NULL DEFAULT 1
 );
 
--- Current attendance snapshot for quick reads (the “latest status”)
 CREATE TABLE IF NOT EXISTS member_attendance_current (
   member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
-  attending_ceremony INTEGER,  -- 0/1/NULL
-  attending_reception INTEGER, -- 0/1/NULL
-  dietary TEXT                 -- freeform
+  attending_ceremony INTEGER,
+  attending_reception INTEGER,
+  dietary TEXT
 );
 
--- Immutable submission history (audit log)
 CREATE TABLE IF NOT EXISTS rsvp_submissions (
   id TEXT PRIMARY KEY,
   party_id TEXT NOT NULL REFERENCES parties(id) ON DELETE CASCADE,
@@ -46,33 +48,24 @@ CREATE TABLE IF NOT EXISTS rsvp_submissions (
   payload_json TEXT NOT NULL
 );
 
--- Idempotency keys to prevent double-submits if users double-click
 CREATE TABLE IF NOT EXISTS idempotency (
   key TEXT PRIMARY KEY,
   submission_id TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Simple rate log (per-IP) to mitigate abuse; optional but handy
 CREATE TABLE IF NOT EXISTS rate_log (
   ip TEXT,
   route TEXT,
   ts INTEGER
 );
 
--- =========================
--- Full-text search (FTS5)
--- =========================
-
--- Search over party display name + concatenated member names
 CREATE VIRTUAL TABLE IF NOT EXISTS party_fts USING fts5(
   party_id UNINDEXED,
   display_name,
   members,
   tokenize = 'unicode61'
 );
-
--- Keep FTS in sync with parties/members
 
 CREATE TRIGGER IF NOT EXISTS party_fts_insert AFTER INSERT ON parties BEGIN
   INSERT INTO party_fts (party_id, display_name, members)
@@ -101,11 +94,6 @@ CREATE TRIGGER IF NOT EXISTS members_after_delete AFTER DELETE ON members BEGIN
     WHERE party_id = OLD.party_id;
 END;
 
--- =========================
--- Helpful views (optional)
--- =========================
-
--- Fast read combining party/member + current attendance + invited events
 CREATE VIEW IF NOT EXISTS v_party_members AS
 SELECT
   p.id              AS party_id,
@@ -123,10 +111,6 @@ SELECT
 FROM parties p
 JOIN members m ON m.party_id = p.id
 LEFT JOIN member_attendance_current a ON a.member_id = m.id;
-
--- =========================
--- Indexes (nice for scale)
--- =========================
 
 CREATE INDEX IF NOT EXISTS idx_members_party ON members(party_id);
 CREATE INDEX IF NOT EXISTS idx_members_sort ON members(party_id, sort_order, full_name);

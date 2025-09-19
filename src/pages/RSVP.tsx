@@ -9,6 +9,58 @@ import {
 } from "../api/rsvp";
 
 // --------------------------- Utilities ---------------------------
+// --------------------------- Validation ---------------------------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+function isValidEmail(v?: string) {
+    if (!v) return true; // email is optional unless reminders are enabled
+    return EMAIL_RE.test(v.trim());
+}
+function normalizeDigits(v?: string) {
+    return (v || "").replace(/\D/g, "");
+}
+function isValidPhone(v?: string) {
+    if (!v) return true; // phone is optional
+    return normalizeDigits(v).length >= 7; // allow common formats
+}
+
+type ValidationResult = {
+    ok: boolean;
+    emailError?: string;
+    phoneError?: string;
+    reminderError?: string;
+};
+
+function validateParty(party: Party): ValidationResult {
+    const res: ValidationResult = { ok: true };
+
+    // Email format
+    if (!isValidEmail(party.contact.email)) {
+        res.ok = false;
+        res.emailError = "Please enter a valid email address (e.g., name@example.com).";
+    }
+
+    // Phone (optional) – basic sanity
+    if (!isValidPhone(party.contact.phone)) {
+        res.ok = false;
+        res.phoneError = "Phone should include at least 7 digits.";
+    }
+
+    // If reminders are enabled, email is required & valid
+    if (party.reminderOptIn) {
+        if (!party.contact.email?.trim()) {
+            res.ok = false;
+            res.reminderError = "Add an email to enable reminders.";
+            // If email is also invalid, prefer the stronger message above
+            if (!res.emailError) res.emailError = res.reminderError;
+        } else if (!isValidEmail(party.contact.email)) {
+            res.ok = false;
+            res.reminderError = "Email must be valid to enable reminders.";
+        }
+    }
+
+    return res;
+}
+
 function classNames(...parts: (string | false | undefined)[]) {
     return parts.filter(Boolean).join(" ");
 }
@@ -194,9 +246,11 @@ function MemberCard({
 function ContactPanel({
     contact,
     onChange,
+    errors,
 }: {
     contact: { email?: string; phone?: string };
     onChange: (c: { email?: string; phone?: string }) => void;
+    errors?: { emailError?: string; phoneError?: string };
 }) {
     return (
         <div className="rounded-2xl border border-ink/10 bg-[#FAF7EC] p-4 shadow-sm">
@@ -210,15 +264,36 @@ function ContactPanel({
                     value={contact.email ?? ""}
                     onChange={(e) => onChange({ ...contact, email: e.target.value })}
                     placeholder="Email (optional)"
-                    className="w-full rounded-xl border border-ink/15 bg-[#FAF7EC] px-3 py-2 text-sm text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring"
+                    className={classNames(
+                        "w-full rounded-xl border bg-[#FAF7EC] px-3 py-2 text-sm text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring",
+                        errors?.emailError ? "border-red-300" : "border-ink/15"
+                    )}
+                    aria-invalid={!!errors?.emailError}
+                    aria-describedby={errors?.emailError ? "email-error" : undefined}
                 />
+                {errors?.emailError && (
+                    <p id="email-error" className="mt-1 text-xs text-red-700">
+                        {errors.emailError}
+                    </p>
+                )}
+
                 <input
                     type="tel"
                     value={contact.phone ?? ""}
                     onChange={(e) => onChange({ ...contact, phone: e.target.value })}
                     placeholder="Phone (optional)"
-                    className="w-full rounded-xl border border-ink/15 bg-[#FAF7EC] px-3 py-2 text-sm text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring"
+                    className={classNames(
+                        "w-full rounded-xl border bg-[#FAF7EC] px-3 py-2 text-sm text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring",
+                        errors?.phoneError ? "border-red-300" : "border-ink/15"
+                    )}
+                    aria-invalid={!!errors?.phoneError}
+                    aria-describedby={errors?.phoneError ? "phone-error" : undefined}
                 />
+                {errors?.phoneError && (
+                    <p id="phone-error" className="mt-1 text-xs text-red-700">
+                        {errors.phoneError}
+                    </p>
+                )}
             </div>
         </div>
     );
@@ -229,11 +304,15 @@ function ReviewBar({
     onSubmit,
     onBack,
     submitting,
+    canSubmit,
+    notice,
 }: {
     party: Party;
     onSubmit: () => void;
     onBack: () => void;
     submitting: boolean;
+    canSubmit: boolean;
+    notice?: string | null;
 }) {
     const counts = useMemo(() => {
         let invited = 0;
@@ -255,6 +334,9 @@ function ReviewBar({
                             {counts.attending} attending selections made across{" "}
                             {party.members.length} guest(s).
                         </div>
+                        {notice && (
+                            <div className="mt-1 text-xs font-medium text-red-700">{notice}</div>
+                        )}
                     </div>
                     <div className="flex gap-2">
                         <button
@@ -267,10 +349,10 @@ function ReviewBar({
                         <button
                             type="button"
                             onClick={onSubmit}
-                            disabled={submitting}
+                            disabled={submitting || !canSubmit}
                             className={classNames(
                                 "rounded-xl border border-ink/20 bg-[#FAF7EC] px-4 py-2 text-sm text-ink hover:brightness-95",
-                                submitting && "opacity-60"
+                                (submitting || !canSubmit) && "opacity-60 cursor-not-allowed"
                             )}
                         >
                             {submitting ? "Submitting…" : "Submit RSVP"}
@@ -295,21 +377,28 @@ function PartySection({
 }) {
     const [submitting, setSubmitting] = useState(false);
 
+    // Compute validation continuously
+    const validation = useMemo(() => validateParty(party), [party]);
+
     function updateMember(id: string, updater: (m: Member) => Member) {
-        setParty({
-            ...party,
-            members: party.members.map((m) => (m.id === id ? updater(m) : m)),
-        });
+        setParty({ ...party, members: party.members.map((m) => (m.id === id ? updater(m) : m)) });
     }
 
     async function handleSubmit() {
+        // Client-side gate
+        if (!validation.ok) {
+            // Focus the email field if that's the problem, otherwise just alert politely
+            if (validation.emailError) {
+                const el = document.querySelector<HTMLInputElement>("input[type='email']");
+                el?.focus();
+            }
+            return; // don't submit
+        }
+
         setSubmitting(true);
         try {
             const payload: RSVPPost = {
-                contact: {
-                    email: party.contact.email,
-                    phone: party.contact.phone,
-                },
+                contact: { email: party.contact.email, phone: party.contact.phone },
                 members: party.members.map((m) => ({
                     memberId: m.id,
                     attending: {
@@ -330,7 +419,7 @@ function PartySection({
 
             const res = await apiSubmitRSVP(party.id, payload);
             if (res.ok) onSubmitted(res.submissionId);
-        } catch (e) {
+        } catch {
             alert("Submit failed. Please try again.");
         } finally {
             setSubmitting(false);
@@ -367,12 +456,20 @@ function PartySection({
                 <ContactPanel
                     contact={party.contact}
                     onChange={(c) => setParty({ ...party, contact: c })}
+                    errors={{
+                        emailError: validation.emailError,
+                        phoneError: validation.phoneError,
+                    }}
                 />
+
                 <ReminderToggle
                     email={party.contact.email}
                     optIn={party.reminderOptIn}
                     onChange={(val) => setParty({ ...party, reminderOptIn: val })}
                 />
+                {validation.reminderError && (
+                    <p className="text-xs text-red-700 -mt-2">{validation.reminderError}</p>
+                )}
             </div>
 
             <div aria-hidden className="h-18 sm:h-16" />
@@ -382,12 +479,21 @@ function PartySection({
                 onSubmit={handleSubmit}
                 onBack={onBackToSearch}
                 submitting={submitting}
+                canSubmit={validation.ok}
+                notice={
+                    !validation.ok
+                        ? validation.emailError ||
+                          validation.phoneError ||
+                          validation.reminderError ||
+                          "Please fix the highlighted fields."
+                        : null
+                }
             />
         </section>
     );
 }
 
-function ConfirmationSection({ partyId, onReset }: { partyId: string; onReset: () => void }) {
+function ConfirmationSection({ onReset }: { partyId: string; onReset: () => void }) {
     return (
         <section className="mx-auto max-w-2xl px-4 py-14 text-center">
             <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm">
