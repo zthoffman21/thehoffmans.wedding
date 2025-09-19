@@ -116,7 +116,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
       for (const m of members) {
         rows.push({
           "Party Name": r.party_name,
-          "Member Name": m.memberId, // TODO: join to members table to show full names
+          "Member Name": m.full_name,
           "Phone": r.contact_phone ?? "",
           "Email": r.contact_email ?? (payload.contact?.email ?? ""),
           "Email Reminders": r.reminder_opt_in ? "Yes" : "No",
