@@ -23,14 +23,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
         SELECT
           s.id                AS submission_id,
           s.party_id,
-          s.created_at,
+          s.submitted_at,
           s.contact_email,
           s.contact_phone,
           s.notes,
           s.payload_json,
           ROW_NUMBER() OVER (
             PARTITION BY s.party_id
-            ORDER BY s.created_at DESC, s.id DESC
+            ORDER BY s.submitted_at DESC, s.id DESC
           ) AS rn
         FROM rsvp_submissions s
       )
@@ -38,7 +38,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
         p.id                 AS party_id,
         p.display_name,
         r.submission_id,
-        r.created_at,
+        r.submitted_at,
         r.contact_email,
         r.contact_phone,
         r.notes,
@@ -53,7 +53,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       "party_id",
       "display_name",
       "submission_id",
-      "created_at",
+      "submitted_at",
       "contact_email",
       "contact_phone",
       "notes",
