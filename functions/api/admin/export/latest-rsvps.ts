@@ -64,8 +64,8 @@ function rowsToCSV(headers: string[], rows: any[]): string {
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
-    try {
-        const sql = `
+  try {
+    const sql = `
       WITH ranked AS (
         SELECT
           s.id                AS submission_id,
@@ -82,9 +82,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         FROM rsvp_submissions s
       )
       SELECT
-        p.id                 AS party_id,
-        p.display_name,
-        r.submission_id,
+        p.display_name AS party_name,
         r.submitted_at,
         r.contact_email,
         r.contact_phone,
@@ -95,34 +93,56 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
       WHERE r.rn = 1
       ORDER BY p.display_name;
     `;
-        const { results } = await env.DB.prepare(sql).all<any>();
+    const { results } = await env.DB.prepare(sql).all<any>();
 
-        const headers = [
-            "party_id",
-            "display_name",
-            "submission_id",
-            "submitted_at",
-            "contact_email",
-            "contact_phone",
-            "reminder_opt_in",
-            "payload_json",
-        ];
+    const headers = [
+      "Party Name",
+      "Member Name",
+      "Phone",
+      "Email",
+      "Email Reminders",
+      "Attending Ceremony",
+      "Attending Reception",
+      "Dietary",
+      "Notes",
+    ];
 
-        const csvCore = rowsToCSV(headers, results ?? []);
-        const stamp = new Date().toISOString().slice(0, 10);
-        const BOM = "\uFEFF"; // UTF-8 BOM so Excel detects UTF-8
+    const rows: any[] = [];
 
-        return new Response(BOM + csvCore, {
-            headers: {
-                "Content-Type": "text/csv; charset=utf-8",
-                "Content-Disposition": `attachment; filename="latest_rsvps_${stamp}.csv"`,
-                "Cache-Control": "no-store",
-            },
+    for (const r of results ?? []) {
+      const payload = JSON.parse(r.payload_json ?? "{}");
+      const members = payload.members ?? [];
+
+      for (const m of members) {
+        rows.push({
+          "Party Name": r.party_name,
+          "Member Name": m.memberId, // TODO: join to members table to show full names
+          "Phone": r.contact_phone ?? "",
+          "Email": r.contact_email ?? (payload.contact?.email ?? ""),
+          "Email Reminders": r.reminder_opt_in ? "Yes" : "No",
+          "Attending Ceremony": m.attending?.ceremony ? "Yes" : "No",
+          "Attending Reception": m.attending?.reception ? "Yes" : "No",
+          "Dietary": m.dietary ?? "",
+          "Notes": payload.notes ?? "",
         });
-    } catch (err: any) {
-        return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-        });
+      }
     }
+
+    const csvCore = rowsToCSV(headers, rows);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const BOM = "\uFEFF";
+
+    return new Response(BOM + csvCore, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="latest_rsvps_${stamp}.csv"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 };
