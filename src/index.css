@@ -5,7 +5,7 @@
 :root { color-scheme: light; }
 html, body, #root { height: 100%; }
 body {
-  background: #F2EFE7;
+  background: #FAF7EC;
   color: #3C3836;
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans",
@@ -14,6 +14,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Firefox */
+.submissions-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #72716c #FAF7EC; /* thumb color | track color */
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.submissions-scroll::-webkit-scrollbar {
+  width: 10px;           /* vertical */
+  height: 10px;          /* horizontal */
+  background: #FAF7EC;   /* track bg */
+}
+
+.submissions-scroll::-webkit-scrollbar-thumb {
+  background: #72716c;   /* thumb bg */
+  border-radius: 8px;
+  border: 2px solid #FAF7EC; /* creates a gap around the thumb */
+}
+
+.submissions-scroll::-webkit-scrollbar-corner {
+  background: #FAF7EC;
+}
+
 
 /* A simple utility you can use in markup */
 .container-px { padding-left: 1rem; padding-right: 1rem; }

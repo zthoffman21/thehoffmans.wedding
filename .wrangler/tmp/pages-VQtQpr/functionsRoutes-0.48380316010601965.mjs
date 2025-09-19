@@ -1,6 +1,5 @@
 import { onRequestGet as __api_admin_export_latest_rsvps_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\export\\latest-rsvps.ts"
 import { onRequestPost as __api_party__id__submit_ts_onRequestPost } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\[id]\\submit.ts"
-import { onRequestGet as __api_admin_export_csv_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\export.csv.ts"
 import { onRequestGet as __api_admin_missing_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\missing.ts"
 import { onRequestGet as __api_admin_overview_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\overview.ts"
 import { onRequestGet as __api_admin_parties_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\parties.ts"
@@ -23,13 +22,6 @@ export const routes = [
       method: "POST",
       middlewares: [],
       modules: [__api_party__id__submit_ts_onRequestPost],
-    },
-  {
-      routePath: "/api/admin/export.csv",
-      mountPath: "/api/admin",
-      method: "GET",
-      middlewares: [],
-      modules: [__api_admin_export_csv_ts_onRequestGet],
     },
   {
       routePath: "/api/admin/missing",

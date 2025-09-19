@@ -110,7 +110,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
             }
 
             const membersArr = Array.isArray(payload.members) ? payload.members : [];
-            const notes = String(payload.notes ?? "");
             const email = r.contact_email ?? payload?.contact?.email ?? "";
             const phone = r.contact_phone ?? "";
 
