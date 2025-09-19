@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS parties (
   contact_email TEXT,
   contact_phone TEXT,
   reminder_opt_in INTEGER DEFAULT 0,
-  notes TEXT,
   can_rsvp INTEGER NOT NULL DEFAULT 1,
   rsvp_deadline DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +36,8 @@ CREATE TABLE IF NOT EXISTS member_attendance_current (
   member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
   attending_ceremony INTEGER,
   attending_reception INTEGER,
-  dietary TEXT
+  dietary TEXT,
+  notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS rsvp_submissions (
@@ -109,7 +109,8 @@ SELECT
   m.invite_reception,
   a.attending_ceremony,
   a.attending_reception,
-  a.dietary
+  a.dietary,
+  a.notes           AS notes
 FROM parties p
 JOIN members m ON m.party_id = p.id
 LEFT JOIN member_attendance_current a ON a.member_id = m.id;

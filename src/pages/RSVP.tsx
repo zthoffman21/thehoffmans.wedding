@@ -413,11 +413,8 @@ function PartySection({
                             : null,
                     },
                     dietary: m.dietary,
+                    notes: m.notes,
                 })),
-                notes: party.members
-                    .map((m) => (m.notes ? `${m.fullName}: ${m.notes}` : null))
-                    .filter(Boolean)
-                    .join(" | "),
                 reminderOptIn: !!party.reminderOptIn,
             };
 
@@ -498,34 +495,34 @@ function PartySection({
 }
 
 function ConfirmationSection({ onReset }: { onReset: () => void }) {
-  const btnRef = useRef<HTMLButtonElement>(null);
+    const btnRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    btnRef.current?.focus();
-  }, []);
+    useEffect(() => {
+        btnRef.current?.focus();
+    }, []);
 
-  return (
-    <section className="mx-auto max-w-2xl px-4 py-14 text-center">
-      <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm select-none">
-        <div
-          className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-[#A7C080] select-none"
-          aria-hidden
-        />
-        <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
-        <p className="mt-2 text-sm text-ink/70">
-          Thank you! Your responses have been recorded. You can close this page or look up
-          your invitation again to make changes.
-        </p>
-        <button
-          ref={btnRef}
-          onClick={onReset}
-          className="mt-6 rounded-xl border border-ink/20 bg-[#FAF7EC] px-4 py-2 text-sm text-ink hover:bg-ink/5"
-        >
-          Look up another invitation
-        </button>
-      </div>
-    </section>
-  );
+    return (
+        <section className="mx-auto max-w-2xl px-4 py-14 text-center">
+            <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm select-none">
+                <div
+                    className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-[#A7C080] select-none"
+                    aria-hidden
+                />
+                <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
+                <p className="mt-2 text-sm text-ink/70">
+                    Thank you! Your responses have been recorded. You can close this page or look up
+                    your invitation again to make changes.
+                </p>
+                <button
+                    ref={btnRef}
+                    onClick={onReset}
+                    className="mt-6 rounded-xl border border-ink/20 bg-[#FAF7EC] px-4 py-2 text-sm text-ink hover:bg-ink/5"
+                >
+                    Look up another invitation
+                </button>
+            </div>
+        </section>
+    );
 }
 
 function ReminderToggle({
@@ -635,9 +632,7 @@ export default function RSVP() {
                                 onSubmitted={() => setStep("confirm")}
                             />
                         ))}
-                    {step === "confirm" && (
-                        <ConfirmationSection onReset={resetAll} />
-                    )}
+                    {step === "confirm" && <ConfirmationSection onReset={resetAll} />}
                 </div>
             </main>
         </>

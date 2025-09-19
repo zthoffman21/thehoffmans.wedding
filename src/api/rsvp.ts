@@ -29,6 +29,7 @@ type PartyMemberDTO = {
   attending_ceremony: 0 | 1 | null;
   attending_reception: 0 | 1 | null;
   dietary?: string | null;
+  notes?: string | null;
 };
 
 type PartyDTO = {
@@ -36,8 +37,7 @@ type PartyDTO = {
   display_name: string;
   contact_email?: string | null;
   contact_phone?: string | null;
-  notes?: string | null;
-  reminder_opt_in?: 0 | 1 | null; 
+  reminder_opt_in?: 0 | 1 | null;
 };
 
 type GetPartyResponseDTO = {
@@ -47,18 +47,17 @@ type GetPartyResponseDTO = {
 
 // ---------- Mapping helpers ----------
 function mapMember(dto: PartyMemberDTO): Member {
-  const invitedEvents = ["ceremony", "reception"];
-
   return {
     id: dto.id,
     fullName: dto.full_name,
     isPlusOne: dto.is_plus_one === 1,
-    invitedEvents,
+    invitedEvents: ["ceremony", "reception"],
     attending: {
       ceremony: dto.attending_ceremony === 1,
       reception: dto.attending_reception === 1,
     },
     dietary: dto.dietary ?? undefined,
+    notes: dto.notes ?? undefined,
   };
 }
 
@@ -94,8 +93,8 @@ export type RSVPPost = {
     memberId: string;
     attending: { ceremony: boolean | null; reception: boolean | null };
     dietary?: string;
+    notes?: string;
   }[];
-  notes?: string;
   reminderOptIn?: boolean;
 };
 

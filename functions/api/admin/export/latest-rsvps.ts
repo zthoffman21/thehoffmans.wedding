@@ -116,10 +116,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
 
             for (const m of membersArr) {
                 const memberId: string = m?.memberId ?? "";
-                const name = memberMap.get(memberId)?.full_name ?? memberId; // fallback to id if missing
+                const name = memberMap.get(memberId)?.full_name ?? memberId;
                 const attendCer = !!m?.attending?.ceremony;
                 const attendRec = !!m?.attending?.reception;
-                const dietary = m?.dietary ?? ""; // add if you later store this per member
+                const dietary = m?.dietary ?? "";
+                const mNotes = m?.notes ?? "";
 
                 rows.push({
                     "Party Name": r.party_name,
@@ -130,7 +131,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
                     "Attending Ceremony": asYesNo(attendCer),
                     "Attending Reception": asYesNo(attendRec),
                     Dietary: dietary,
-                    Notes: notes,
+                    Notes: mNotes,
                 });
             }
 

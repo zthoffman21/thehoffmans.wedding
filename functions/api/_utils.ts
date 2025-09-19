@@ -21,8 +21,8 @@ export const RSVPSubmissionSchema = z.object({
       reception: z.boolean().nullable(),
     }),
     dietary: z.string().max(500).optional(),
+    notes: z.string().max(1000).optional(),
   })),
-  notes: z.string().max(1000).optional(),
   reminderOptIn: z.boolean().optional(),
 });
 

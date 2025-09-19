@@ -104,17 +104,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
         for (const m of parsed.data.members) {
             stmts.push(
                 env.DB.prepare(
-                    `INSERT INTO member_attendance_current (member_id, attending_ceremony, attending_reception, dietary)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(member_id) DO UPDATE SET
-         attending_ceremony = excluded.attending_ceremony,
-         attending_reception = excluded.attending_reception,
-         dietary = excluded.dietary`
+                    `
+  INSERT INTO member_attendance_current
+    (member_id, attending_ceremony, attending_reception, dietary, notes)
+  VALUES
+    (?, ?, ?, ?, ?)
+  ON CONFLICT(member_id) DO UPDATE SET
+    attending_ceremony = excluded.attending_ceremony,
+    attending_reception = excluded.attending_reception,
+    dietary = excluded.dietary,
+    notes = excluded.notes
+         `
                 ).bind(
                     m.memberId,
                     m.attending.ceremony === null ? null : m.attending.ceremony ? 1 : 0,
                     m.attending.reception === null ? null : m.attending.reception ? 1 : 0,
-                    m.dietary ?? null
+                    m.dietary ?? null,
+                    m.notes   ?? null
                 )
             );
         }
