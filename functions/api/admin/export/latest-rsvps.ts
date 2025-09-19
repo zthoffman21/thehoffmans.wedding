@@ -26,7 +26,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
           s.submitted_at,
           s.contact_email,
           s.contact_phone,
-          s.notes,
+          s.reminder_opt_in,
           s.payload_json,
           ROW_NUMBER() OVER (
             PARTITION BY s.party_id
@@ -41,7 +41,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
         r.submitted_at,
         r.contact_email,
         r.contact_phone,
-        r.notes,
+        r.reminder_opt_in,
         r.payload_json
       FROM ranked r
       JOIN parties p ON p.id = r.party_id
@@ -56,7 +56,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       "submitted_at",
       "contact_email",
       "contact_phone",
-      "notes",
+      "reminder_opt_in",
       "payload_json",
     ];
 
