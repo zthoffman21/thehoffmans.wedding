@@ -1,24 +1,71 @@
 /// <reference types="@cloudflare/workers-types" />
 import { type Env } from "../../_utils";
 
-function csvEscape(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function rowsToCSV(headers: string[], rows: any[]): string {
-  const head = headers.join(",") + "\n";
-  const body = rows.map((row) => headers
-    .map((h) => csvEscape((row as Record<string, unknown>)[h]))
-    .join(",")
-  ).join("\n");
-  return head + body + "\n";
+function formatForExcel(key: string, v: unknown): string {
+    if (v === null || v === undefined) return "";
+
+    // Normalize booleans
+    if (typeof v === "boolean") return v ? "TRUE" : "FALSE";
+
+    // Normalize dates (adjust key check to your schema)
+    if (key === "submitted_at") {
+        try {
+            const d = new Date(String(v));
+            // Format as "YYYY-MM-DD HH:MM:SS" (local time)
+            const pad = (n: number) => String(n).padStart(2, "0");
+            const ts =
+                d.getFullYear() +
+                "-" +
+                pad(d.getMonth() + 1) +
+                "-" +
+                pad(d.getDate()) +
+                " " +
+                pad(d.getHours()) +
+                ":" +
+                pad(d.getMinutes()) +
+                ":" +
+                pad(d.getSeconds());
+            return ts;
+        } catch {
+            // fall through to string
+        }
+    }
+
+    // Preserve IDs/phones exactly (no scientific notation, keep leading zeros)
+    if (
+        key.endsWith("_id") ||
+        key === "party_id" ||
+        key === "submission_id" ||
+        key === "contact_phone"
+    ) {
+        const s = String(v);
+        // Wrap as formula text to force Excel to keep as text
+        return `="${s}"`;
+    }
+
+    return String(v);
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
-  try {
-    // --- Query (latest per party) ---
-    const sql = `
+function csvEscapeCell(s: string): string {
+    // Quote if contains comma, quote, or newline
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function rowsToCSV(headers: string[], rows: any[]): string {
+    const head = headers.join(",") + "\r\n"; // CRLF for Excel
+    const body = rows
+        .map((row) =>
+            headers
+                .map((h) => csvEscapeCell(formatForExcel(h, (row as Record<string, unknown>)[h])))
+                .join(",")
+        )
+        .join("\r\n");
+    return head + body + "\r\n";
+}
+
+export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
+    try {
+        const sql = `
       WITH ranked AS (
         SELECT
           s.id                AS submission_id,
@@ -48,31 +95,34 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       WHERE r.rn = 1
       ORDER BY p.display_name;
     `;
-    const { results } = await env.DB.prepare(sql).all<any>();
-    const headers = [
-      "party_id",
-      "display_name",
-      "submission_id",
-      "submitted_at",
-      "contact_email",
-      "contact_phone",
-      "reminder_opt_in",
-      "payload_json",
-    ];
+        const { results } = await env.DB.prepare(sql).all<any>();
 
-    const csv = rowsToCSV(headers, results ?? []);
+        const headers = [
+            "party_id",
+            "display_name",
+            "submission_id",
+            "submitted_at",
+            "contact_email",
+            "contact_phone",
+            "reminder_opt_in",
+            "payload_json",
+        ];
 
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="latest_rsvps.csv"`,
-        "Cache-Control": "no-store",
-      },
-    });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+        const csvCore = rowsToCSV(headers, results ?? []);
+        const stamp = new Date().toISOString().slice(0, 10);
+        const BOM = "\uFEFF"; // UTF-8 BOM so Excel detects UTF-8
+
+        return new Response(BOM + csvCore, {
+            headers: {
+                "Content-Type": "text/csv; charset=utf-8",
+                "Content-Disposition": `attachment; filename="latest_rsvps_${stamp}.csv"`,
+                "Cache-Control": "no-store",
+            },
+        });
+    } catch (err: any) {
+        return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 };
