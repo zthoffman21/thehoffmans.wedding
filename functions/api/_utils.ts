@@ -23,6 +23,7 @@ export const RSVPSubmissionSchema = z.object({
     dietary: z.string().max(500).optional(),
   })),
   notes: z.string().max(1000).optional(),
+  reminderOptIn: z.boolean().optional(),
 });
 
 export function json(data: unknown, init?: number | ResponseInit) {

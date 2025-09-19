@@ -5,7 +5,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, params }) => {
   const id = String(params.id);
 
   const party = await env.DB
-    .prepare(`SELECT id, display_name, contact_email, contact_phone, notes FROM parties WHERE id = ?`)
+    .prepare(`SELECT id, display_name, contact_email, contact_phone, notes, reminder_opt_in FROM parties WHERE id = ?`)
     .bind(id)
     .first();
   if (!party) return json({ error: "Not found" }, 404);

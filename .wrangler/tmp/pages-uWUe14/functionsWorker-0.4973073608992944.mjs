@@ -12850,7 +12850,8 @@ var RSVPSubmissionSchema = external_exports.object({
     }),
     dietary: external_exports.string().max(500).optional()
   })),
-  notes: external_exports.string().max(1e3).optional()
+  notes: external_exports.string().max(1e3).optional(),
+  reminderOptIn: external_exports.boolean().optional()
 });
 function json2(data, init) {
   const status = typeof init === "number" ? init : init?.status ?? 200;
@@ -12927,6 +12928,9 @@ var onRequestPost = /* @__PURE__ */ __name(async ({ env, params, request }) => {
     const submissionId = newId("rsvp");
     const payloadJson = JSON.stringify(parsed.data);
     const stmts = [];
+    const contactEmail = parsed.data.contact?.email?.trim() || null;
+    const contactPhone = parsed.data.contact?.phone?.trim() || null;
+    const reminderOptIn = typeof parsed.data.reminderOptIn === "boolean" ? parsed.data.reminderOptIn ? 1 : 0 : null;
     stmts.push(
       env.DB.prepare(
         `INSERT INTO rsvp_submissions (id, party_id, contact_email, contact_phone, payload_json)
@@ -12963,6 +12967,16 @@ var onRequestPost = /* @__PURE__ */ __name(async ({ env, params, request }) => {
         ).bind(idemKey, submissionId)
       );
     }
+    stmts.push(
+      env.DB.prepare(
+        `UPDATE parties
+       SET
+         contact_email = COALESCE(?, contact_email),
+         contact_phone = COALESCE(?, contact_phone),
+         reminder_opt_in = COALESCE(?, reminder_opt_in)
+     WHERE id = ?`
+      ).bind(contactEmail, contactPhone, reminderOptIn, party.id)
+    );
     await env.DB.batch(stmts);
     await notifyEmail(
       env,
@@ -13033,7 +13047,7 @@ var onRequest = /* @__PURE__ */ __name(async ({ env, request }) => {
 // api/party/[id]/index.ts
 var onRequestGet = /* @__PURE__ */ __name(async ({ env, params }) => {
   const id = String(params.id);
-  const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes FROM parties WHERE id = ?`).bind(id).first();
+  const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes, reminder_opt_in FROM parties WHERE id = ?`).bind(id).first();
   if (!party) return json2({ error: "Not found" }, 404);
   const members = await env.DB.prepare(
     `SELECT m.id, m.full_name, m.is_plus_one, m.plus_one_for, m.sort_order,
@@ -13077,7 +13091,7 @@ var onRequestGet2 = /* @__PURE__ */ __name(async ({ env }) => {
   }
 }, "onRequestGet");
 
-// ../.wrangler/tmp/pages-I68l2Z/functionsRoutes-0.4208777460228178.mjs
+// ../.wrangler/tmp/pages-uWUe14/functionsRoutes-0.4358101729481716.mjs
 var routes = [
   {
     routePath: "/api/party/:id/submit",
@@ -13596,7 +13610,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-zhLm2r/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-RL0F10/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -13628,7 +13642,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-zhLm2r/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-RL0F10/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -13728,4 +13742,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default as default
 };
-//# sourceMappingURL=functionsWorker-0.5646360227488995.mjs.map
+//# sourceMappingURL=functionsWorker-0.4973073608992944.mjs.map

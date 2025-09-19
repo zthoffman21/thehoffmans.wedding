@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     searchParties as apiSearchParties,
     getPartyById as apiGetPartyById,
@@ -398,7 +398,10 @@ function PartySection({
         setSubmitting(true);
         try {
             const payload: RSVPPost = {
-                contact: { email: party.contact.email, phone: party.contact.phone },
+                contact: {
+                    email: party.contact.email?.trim() || undefined,
+                    phone: party.contact.phone?.trim() || undefined,
+                },
                 members: party.members.map((m) => ({
                     memberId: m.id,
                     attending: {
@@ -415,6 +418,7 @@ function PartySection({
                     .map((m) => (m.notes ? `${m.fullName}: ${m.notes}` : null))
                     .filter(Boolean)
                     .join(" | "),
+                reminderOptIn: !!party.reminderOptIn,
             };
 
             const res = await apiSubmitRSVP(party.id, payload);
@@ -493,28 +497,35 @@ function PartySection({
     );
 }
 
-function ConfirmationSection({ onReset }: { partyId: string; onReset: () => void }) {
-    return (
-        <section className="mx-auto max-w-2xl px-4 py-14 text-center">
-            <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm">
-                <div
-                    className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-[#A7C080]"
-                    aria-hidden
-                />
-                <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
-                <p className="mt-2 text-sm text-ink/70">
-                    Thank you! Your responses have been recorded. You can close this page or look up
-                    your invitation again to make changes.
-                </p>
-                <button
-                    onClick={onReset}
-                    className="mt-6 rounded-xl border border-ink/20 bg-[#FAF7EC] px-4 py-2 text-sm text-ink hover:bg-ink/5"
-                >
-                    Look up another invitation
-                </button>
-            </div>
-        </section>
-    );
+function ConfirmationSection({ onReset }: { onReset: () => void }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    btnRef.current?.focus();
+  }, []);
+
+  return (
+    <section className="mx-auto max-w-2xl px-4 py-14 text-center">
+      <div className="mx-auto max-w-md rounded-2xl border border-ink/10 bg-[#FAF7EC] p-8 shadow-sm select-none">
+        <div
+          className="mx-auto mb-3 size-12 rounded-full border border-ink/10 bg-[#A7C080] select-none"
+          aria-hidden
+        />
+        <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
+        <p className="mt-2 text-sm text-ink/70">
+          Thank you! Your responses have been recorded. You can close this page or look up
+          your invitation again to make changes.
+        </p>
+        <button
+          ref={btnRef}
+          onClick={onReset}
+          className="mt-6 rounded-xl border border-ink/20 bg-[#FAF7EC] px-4 py-2 text-sm text-ink hover:bg-ink/5"
+        >
+          Look up another invitation
+        </button>
+      </div>
+    </section>
+  );
 }
 
 function ReminderToggle({
@@ -625,7 +636,7 @@ export default function RSVP() {
                             />
                         ))}
                     {step === "confirm" && (
-                        <ConfirmationSection partyId={partyId ?? ""} onReset={resetAll} />
+                        <ConfirmationSection onReset={resetAll} />
                     )}
                 </div>
             </main>

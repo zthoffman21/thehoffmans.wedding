@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/pages-I68l2Z/functionsWorker-0.5646360227488995.mjs
+// .wrangler/tmp/pages-uWUe14/functionsWorker-0.4973073608992944.mjs
 var __defProp2 = Object.defineProperty;
 var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
 var __export = /* @__PURE__ */ __name((target, all) => {
@@ -13129,7 +13129,8 @@ var RSVPSubmissionSchema = external_exports.object({
     }),
     dietary: external_exports.string().max(500).optional()
   })),
-  notes: external_exports.string().max(1e3).optional()
+  notes: external_exports.string().max(1e3).optional(),
+  reminderOptIn: external_exports.boolean().optional()
 });
 function json2(data, init) {
   const status = typeof init === "number" ? init : init?.status ?? 200;
@@ -13207,6 +13208,9 @@ var onRequestPost = /* @__PURE__ */ __name2(async ({ env, params, request }) => 
     const submissionId = newId("rsvp");
     const payloadJson = JSON.stringify(parsed.data);
     const stmts = [];
+    const contactEmail = parsed.data.contact?.email?.trim() || null;
+    const contactPhone = parsed.data.contact?.phone?.trim() || null;
+    const reminderOptIn = typeof parsed.data.reminderOptIn === "boolean" ? parsed.data.reminderOptIn ? 1 : 0 : null;
     stmts.push(
       env.DB.prepare(
         `INSERT INTO rsvp_submissions (id, party_id, contact_email, contact_phone, payload_json)
@@ -13243,6 +13247,16 @@ var onRequestPost = /* @__PURE__ */ __name2(async ({ env, params, request }) => 
         ).bind(idemKey, submissionId)
       );
     }
+    stmts.push(
+      env.DB.prepare(
+        `UPDATE parties
+       SET
+         contact_email = COALESCE(?, contact_email),
+         contact_phone = COALESCE(?, contact_phone),
+         reminder_opt_in = COALESCE(?, reminder_opt_in)
+     WHERE id = ?`
+      ).bind(contactEmail, contactPhone, reminderOptIn, party.id)
+    );
     await env.DB.batch(stmts);
     await notifyEmail(
       env,
@@ -13312,7 +13326,7 @@ var onRequest = /* @__PURE__ */ __name2(async ({ env, request }) => {
 }, "onRequest");
 var onRequestGet = /* @__PURE__ */ __name2(async ({ env, params }) => {
   const id = String(params.id);
-  const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes FROM parties WHERE id = ?`).bind(id).first();
+  const party = await env.DB.prepare(`SELECT id, display_name, contact_email, contact_phone, notes, reminder_opt_in FROM parties WHERE id = ?`).bind(id).first();
   if (!party) return json2({ error: "Not found" }, 404);
   const members = await env.DB.prepare(
     `SELECT m.id, m.full_name, m.is_plus_one, m.plus_one_for, m.sort_order,
@@ -14048,7 +14062,7 @@ var jsonError2 = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default2 = jsonError2;
 
-// .wrangler/tmp/bundle-GjsuDt/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-fKd53F/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
   middleware_ensure_req_body_drained_default2,
   middleware_miniflare3_json_error_default2
@@ -14080,7 +14094,7 @@ function __facade_invoke__2(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__2, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-GjsuDt/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-fKd53F/middleware-loader.entry.ts
 var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -14180,4 +14194,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default2 as default
 };
-//# sourceMappingURL=functionsWorker-0.5646360227488995.js.map
+//# sourceMappingURL=functionsWorker-0.4973073608992944.js.map

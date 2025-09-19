@@ -1,6 +1,6 @@
-INSERT OR REPLACE INTO parties (id, slug, display_name, contact_email, contact_phone, can_rsvp) VALUES
-  ('p_dhoffman', 'david_hoffman_family', 'David Hoffman Family', 'david@example.com', '610-555-1299', 1),
-  ('p_avery',    'avery',                 'Avery Tucker',         'avery@example.com', NULL,            1);
+INSERT OR REPLACE INTO parties (id, slug, display_name, contact_email, contact_phone, reminder_opt_in, can_rsvp) VALUES
+  ('p_dhoffman', 'david_hoffman_family', 'David Hoffman Family',  NULL, NULL, NULL, 1),
+  ('p_avery',    'avery',                 'Avery Tucker',         NULL, NULL, NULL, 1);
 
 INSERT OR REPLACE INTO members (id, party_id, full_name, is_plus_one, plus_one_for, sort_order, invite_ceremony, invite_reception)
 VALUES

@@ -37,6 +37,7 @@ type PartyDTO = {
   contact_email?: string | null;
   contact_phone?: string | null;
   notes?: string | null;
+  reminder_opt_in?: 0 | 1 | null; 
 };
 
 type GetPartyResponseDTO = {
@@ -69,6 +70,7 @@ function mapParty(dto: PartyDTO, members: PartyMemberDTO[]): Party {
     displayName: dto.display_name,
     contact: { email: dto.contact_email ?? undefined, phone: dto.contact_phone ?? undefined },
     members: members.map(mapMember),
+    reminderOptIn: dto.reminder_opt_in === 1,
   };
 }
 
@@ -96,6 +98,7 @@ export type RSVPPost = {
     dietary?: string;
   }[];
   notes?: string;
+  reminderOptIn?: boolean;
 };
 
 export async function submitRSVP(partyId: string, payload: RSVPPost): Promise<{ ok: boolean; submissionId: string }> {

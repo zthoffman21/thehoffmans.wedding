@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS parties (
   display_name TEXT NOT NULL,
   contact_email TEXT,
   contact_phone TEXT,
+  reminder_opt_in INTEGER DEFAULT 0,
   notes TEXT,
   can_rsvp INTEGER NOT NULL DEFAULT 1,
   rsvp_deadline DATETIME,

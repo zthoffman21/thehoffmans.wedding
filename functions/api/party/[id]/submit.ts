@@ -75,6 +75,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
 
         const stmts: D1PreparedStatement[] = [];
 
+        const contactEmail = parsed.data.contact?.email?.trim() || null;
+        const contactPhone = parsed.data.contact?.phone?.trim() || null;
+
+        const reminderOptIn =
+            typeof parsed.data.reminderOptIn === "boolean"
+                ? parsed.data.reminderOptIn
+                    ? 1
+                    : 0
+                : null;
+
         // 1) submission row
         stmts.push(
             env.DB.prepare(
@@ -116,6 +126,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                 ).bind(idemKey, submissionId)
             );
         }
+
+        stmts.push(
+            env.DB.prepare(
+                `UPDATE parties
+       SET
+         contact_email = COALESCE(?, contact_email),
+         contact_phone = COALESCE(?, contact_phone),
+         reminder_opt_in = COALESCE(?, reminder_opt_in)
+     WHERE id = ?`
+            ).bind(contactEmail, contactPhone, reminderOptIn, party.id)
+        );
 
         // Execute atomically (works local + remote)
         await env.DB.batch(stmts);
