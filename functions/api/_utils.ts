@@ -4,9 +4,9 @@ import { z } from "zod";
 
 export type Env = {
   DB: D1Database;
-  NOTIFY_EMAIL_TO?: string; // optional email ping on submit
-  NOTIFY_FROM?: string;     // e.g. rsvp@yourdomain.com
-  ADMIN_TOKEN?: string;     // if you add /api/admin/export later
+  NOTIFY_EMAIL_TO?: string; 
+  NOTIFY_FROM?: string;
+  ADMIN_TOKEN?: string;
 };
 
 export const RSVPSubmissionSchema = z.object({
