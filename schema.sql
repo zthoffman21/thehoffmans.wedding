@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS rsvp_submissions (
   submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   contact_email TEXT,
   contact_phone TEXT,
+  reminder_opt_in INTEGER DEFAULT 0,
   payload_json TEXT NOT NULL
 );
 

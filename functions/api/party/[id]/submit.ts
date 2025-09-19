@@ -88,13 +88,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
         // 1) submission row
         stmts.push(
             env.DB.prepare(
-                `INSERT INTO rsvp_submissions (id, party_id, contact_email, contact_phone, payload_json)
+                `INSERT INTO rsvp_submissions (id, party_id, contact_email, contact_phone, reminder_opt_in, payload_json)
      VALUES (?, ?, ?, ?, ?)`
             ).bind(
                 submissionId,
                 party.id,
                 parsed.data.contact?.email ?? null,
                 parsed.data.contact?.phone ?? null,
+                parsed.data.reminderOptIn?? null,
                 payloadJson
             )
         );

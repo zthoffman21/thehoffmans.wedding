@@ -47,8 +47,6 @@ type GetPartyResponseDTO = {
 
 // ---------- Mapping helpers ----------
 function mapMember(dto: PartyMemberDTO): Member {
-  // If you later add "invited events" to the DB, map them here.
-  // For now, default to both ceremony & reception.
   const invitedEvents = ["ceremony", "reception"];
 
   return {
