@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import { json, RSVPSubmissionSchema, newId, notifyEmail, type Env } from "../../_utils";
+import { json, RSVPSubmissionSchema, newId, type Env } from "../../_utils";
 
 export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }) => {
     // Wrap everything so we never return a bare 500
@@ -147,13 +147,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
 
         // Execute atomically (works local + remote)
         await env.DB.batch(stmts);
-
-        // Notify (outside of DB txn)
-        await notifyEmail(
-            env,
-            `New RSVP: ${party.display_name}`,
-            `Party ${party.display_name} submitted an RSVP.\nSubmission ID: ${submissionId}\n`
-        );
 
         return json({ ok: true, submissionId });
     } catch (err: any) {
