@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { searchParties as apiSearchParties } from "../../api/rsvp";
+import { formatNYDateTime } from "../../lib/time";
 
 type SubmissionRow = {
     submission_id: string;
@@ -98,7 +99,7 @@ function Overview() {
                                 <div className="font-medium">{s.party_name ?? s.party_id}</div>
                             </div>
                             <div className="text-sm text-ink/60">
-                                {new Date(s.submitted_at).toLocaleString()}
+                                {formatNYDateTime(s.submitted_at)}
                             </div>
                         </li>
                     ))}
@@ -159,7 +160,7 @@ function Submissions() {
                         {items.map((r) => (
                             <tr key={`${r.submission_id}:${r.member_id ?? "party"}`}>
                                 <td className="whitespace-nowrap">
-                                    {new Date(r.submitted_at).toLocaleString()}
+                                    {formatNYDateTime(r.submitted_at)}
                                 </td>
                                 <td
                                     className="max-w-[220px] truncate"
@@ -305,97 +306,102 @@ type MemberDetail = {
 };
 
 function Manage() {
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<Array<{ id: string; label: string }> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [party, setParty] = useState<PartyDetail | null>(null);
+    const [q, setQ] = useState("");
+    const [results, setResults] = useState<Array<{ id: string; label: string }> | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [party, setParty] = useState<PartyDetail | null>(null);
 
-  // Debounced search (same pattern as RSVP SearchSection)
-  useEffect(() => {
-    const handle = setTimeout(async () => {
-      const query = q.trim();
-      if (!query) {
-        setResults(null);
-        setError(null);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await apiSearchParties(query);
-        setResults(res);
-      } catch {
-        setError("Search failed. Please try again.");
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-    return () => clearTimeout(handle);
-  }, [q]);
+    // Debounced search (same pattern as RSVP SearchSection)
+    useEffect(() => {
+        const handle = setTimeout(async () => {
+            const query = q.trim();
+            if (!query) {
+                setResults(null);
+                setError(null);
+                return;
+            }
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await apiSearchParties(query);
+                setResults(res);
+            } catch {
+                setError("Search failed. Please try again.");
+                setResults([]);
+            } finally {
+                setLoading(false);
+            }
+        }, 250);
+        return () => clearTimeout(handle);
+    }, [q]);
 
-  async function loadParty(id: string) {
-    const res = await fetch(`/api/admin/party/${id}`, { cache: "no-store" }).then(r => r.json());
-    setParty(res.party ?? null);
-  }
+    async function loadParty(id: string) {
+        const res = await fetch(`/api/admin/party/${id}`, { cache: "no-store" }).then((r) =>
+            r.json()
+        );
+        setParty(res.party ?? null);
+    }
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
-      {/* Left: search & results (RSVP-like) */}
-      <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
-        <h2 className="mb-2 text-lg font-semibold">Find a party</h2>
-        <div className="flex gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Enter party or member name…"
-            className="w-full rounded-xl border border-ink/15 bg-[#FAF7EC] px-4 py-3 text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring"
-            aria-label="Search name"
-          />
-        </div>
+    return (
+        <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
+            {/* Left: search & results (RSVP-like) */}
+            <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <h2 className="mb-2 text-lg font-semibold">Find a party</h2>
+                <div className="flex gap-2">
+                    <input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Enter party or member name…"
+                        className="w-full rounded-xl border border-ink/15 bg-[#FAF7EC] px-4 py-3 text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring"
+                        aria-label="Search name"
+                    />
+                </div>
 
-        <div className="mt-4">
-          {loading && <div className="text-sm text-ink/70">Searching…</div>}
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {error}
+                <div className="mt-4">
+                    {loading && <div className="text-sm text-ink/70">Searching…</div>}
+                    {error && (
+                        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+                    {results && results.length === 0 && !loading && !error && (
+                        <div className="rounded-xl border border-ink/10 bg-amber-50 p-4 text-sm text-ink">
+                            We couldn't find a match. Try a different variation.
+                        </div>
+                    )}
+                    {results && results.length > 0 && (
+                        <ul className="divide-y divide-ink/10 overflow-hidden rounded-xl border border-ink/10">
+                            {results.map((p) => (
+                                <li key={p.id} className="group bg-[#FAF7EC]/70 backdrop-blur">
+                                    <button
+                                        onClick={() => loadParty(p.id)}
+                                        className="flex w-full items-center justify-between px-4 py-3 text-left transition duration-200 ease-out hover:bg-ink/5 hover:shadow-sm hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7EC]"
+                                    >
+                                        <span className="text-ink">{p.label}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
-          )}
-          {results && results.length === 0 && !loading && !error && (
-            <div className="rounded-xl border border-ink/10 bg-amber-50 p-4 text-sm text-ink">
-              We couldn't find a match. Try a different variation.
-            </div>
-          )}
-          {results && results.length > 0 && (
-            <ul className="divide-y divide-ink/10 overflow-hidden rounded-xl border border-ink/10">
-              {results.map((p) => (
-                <li key={p.id} className="group bg-[#FAF7EC]/70 backdrop-blur">
-                  <button
-                    onClick={() => loadParty(p.id)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left transition duration-200 ease-out hover:bg-ink/5 hover:shadow-sm hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7EC]"
-                  >
-                    <span className="text-ink">{p.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
 
-      {/* Right: your existing editor */}
-      <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
-        {!party ? (
-          <div className="text-ink/60">Pick a party to edit.</div>
-        ) : (
-          <PartyEditor party={party} onChange={setParty} onReload={() => loadParty(party.id)} />
-        )}
-      </div>
-    </div>
-  );
+            {/* Right: your existing editor */}
+            <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                {!party ? (
+                    <div className="text-ink/60">Pick a party to edit.</div>
+                ) : (
+                    <PartyEditor
+                        party={party}
+                        onChange={setParty}
+                        onReload={() => loadParty(party.id)}
+                    />
+                )}
+            </div>
+        </div>
+    );
 }
-
 
 function PartyEditor({
     party,

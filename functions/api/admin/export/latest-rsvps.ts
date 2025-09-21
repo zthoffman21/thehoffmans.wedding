@@ -28,7 +28,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         SELECT
           s.id                AS submission_id,
           s.party_id,
-          s.submitted_at,
+          strftime('%Y-%m-%dT%H:%M:%SZ', s.submitted_at) AS submitted_at,
           s.contact_email,
           s.contact_phone,
           s.reminder_opt_in,
@@ -43,7 +43,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
         p.id           AS party_id,
         p.display_name AS party_name,
         r.submission_id,
-        r.submitted_at,
+        strftime('%Y-%m-%dT%H:%M:%SZ', r.submitted_at) AS submitted_at,
         r.contact_email,
         r.contact_phone,
         r.reminder_opt_in,

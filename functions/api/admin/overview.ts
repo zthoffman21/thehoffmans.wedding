@@ -13,7 +13,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
     .first<{ c: number }>();
 
   const recent = await env.DB.prepare(
-    `SELECT s.id, s.party_id, p.display_name AS party_name, s.submitted_at
+    `SELECT s.id, s.party_id, p.display_name AS party_name, strftime('%Y-%m-%dT%H:%M:%SZ', s.submitted_at) AS submitted_at
      FROM rsvp_submissions s
      JOIN parties p ON p.id = s.party_id
      WHERE s.submitted_at >= datetime('now','-7 days')

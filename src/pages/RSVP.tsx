@@ -88,6 +88,7 @@ function fmtDate(iso?: string | null) {
     const d = parseISO(iso);
     if (!d) return "—";
     return new Intl.DateTimeFormat(undefined, {
+        timeZone: "America/New_York",
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -95,73 +96,73 @@ function fmtDate(iso?: string | null) {
 }
 
 function countdownTo(iso?: string | null) {
-  const target = parseISO(iso);
-  if (!target) return { expired: false, ms: 0 };
+    const target = parseISO(iso);
+    if (!target) return { expired: false, ms: 0 };
 
-  const now = Date.now();
-  const diffMs = target.getTime() - now;
-  if (diffMs <= 0) return { expired: true, ms: 0 };
+    const now = Date.now();
+    const diffMs = target.getTime() - now;
+    if (diffMs <= 0) return { expired: true, ms: 0 };
 
-  return { expired: false, ms: diffMs };
+    return { expired: false, ms: diffMs };
 }
 
 function pad2(n: number) {
-  return n < 10 ? `0${n}` : String(n);
+    return n < 10 ? `0${n}` : String(n);
 }
 
 function formatCountdown(ms: number) {
-  const totalSec = Math.floor(ms / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hours = Math.floor((totalSec % 86400) / 3600);
-  const minutes = Math.floor((totalSec % 3600) / 60);
-  const seconds = totalSec % 60;
+    const totalSec = Math.floor(ms / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
 
-  // Show days if any, then HH:MM:SS
-  var time = "";
-  if (days > 1) time = `${days} Days, ` + time;
-  else time = days > 0 ? `${days} Day, ` + time: time;
+    // Show days if any, then HH:MM:SS
+    var time = "";
+    if (days > 1) time = `${days} Days, ` + time;
+    else time = days > 0 ? `${days} Day, ` + time : time;
 
-  if (hours > 1) time = time + `${hours} Hours,`;
-  else time = hours > 0 ? time + `${hours} Hour,`: time;
+    if (hours > 1) time = time + `${hours} Hours,`;
+    else time = hours > 0 ? time + `${hours} Hour,` : time;
 
-  return `${time} ${minutes}:${pad2(seconds)} Minutes`;
+    return `${time} ${minutes}:${pad2(seconds)} Minutes`;
 }
 
 // ---------------------------- UI Parts ---------------------------
 function DeadlineCard({ deadlineISO }: { deadlineISO?: string | null }) {
-  const [nowTick, setNowTick] = useState(() => Date.now());
+    const [nowTick, setNowTick] = useState(() => Date.now());
 
-  useEffect(() => {
-    // Tick every second for a smooth countdown
-    const id = setInterval(() => setNowTick(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
+    useEffect(() => {
+        // Tick every second for a smooth countdown
+        const id = setInterval(() => setNowTick(Date.now()), 1000);
+        return () => clearInterval(id);
+    }, []);
 
-  const { expired, ms } = countdownTo(deadlineISO);
-  const label = expired ? "The RSVP window has closed." : formatCountdown(ms);
+    const { expired, ms } = countdownTo(deadlineISO);
+    const label = expired ? "The RSVP window has closed." : formatCountdown(ms);
 
-  return (
-    <section className="mx-auto max-w-2xl px-4 pt-8">
-      <div
-        className={
-          "rounded-2xl border p-5 sm:p-6 shadow-sm backdrop-blur " +
-          (expired ? "border-red-200 bg-red-50/80" : "border-ink/5 bg-[#FAF7EC]/80")
-        }
-      >
-        <h2 className="font-serif text-xl text-ink leading-tight">RSVP deadline</h2>
-        <p className="mt-1 text-sm text-ink/70">
-          {deadlineISO ? fmtDate(deadlineISO) : "TBD"}
-        </p>
+    return (
+        <section className="mx-auto max-w-2xl px-4 pt-8">
+            <div
+                className={
+                    "rounded-2xl border p-5 sm:p-6 shadow-sm backdrop-blur " +
+                    (expired ? "border-red-200 bg-red-50/80" : "border-ink/5 bg-[#FAF7EC]/80")
+                }
+            >
+                <h2 className="font-serif text-xl text-ink leading-tight">RSVP deadline</h2>
+                <p className="mt-1 text-sm text-ink/70">
+                    {deadlineISO ? fmtDate(deadlineISO) : "TBD"}
+                </p>
 
-        <div
-          className="mt-3 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-sm text-ink font-mono tabular-nums"
-          aria-live="polite"
-        >
-          {deadlineISO ? label : "We'll post the deadline soon."}
-        </div>
-      </div>
-    </section>
-  );
+                <div
+                    className="mt-3 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-sm text-ink font-mono tabular-nums"
+                    aria-live="polite"
+                >
+                    {deadlineISO ? label : "We'll post the deadline soon."}
+                </div>
+            </div>
+        </section>
+    );
 }
 
 function SearchSection({ onPick }: { onPick: (id: string) => void }) {

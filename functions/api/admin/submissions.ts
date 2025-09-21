@@ -47,7 +47,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       s.party_id,
       p.display_name AS party_name,
       s.payload_json,
-      s.submitted_at,
+      strftime('%Y-%m-%dT%H:%M:%SZ', submitted_at) AS submitted_at,
       s.contact_email,
       s.contact_phone,
       s.reminder_opt_in
