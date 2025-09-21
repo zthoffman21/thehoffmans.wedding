@@ -8,6 +8,8 @@ import {
     type RSVPPost,
 } from "../api/rsvp";
 
+const SITE_RSVP_DEADLINE_ISO = "2026-06-15T23:59:59-04:00";
+
 // --------------------------- Utilities ---------------------------
 // --------------------------- Validation ---------------------------
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -76,7 +78,92 @@ function formatEventLabel(key: string) {
     }
 }
 
+function parseISO(iso?: string | null) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function fmtDate(iso?: string | null) {
+    const d = parseISO(iso);
+    if (!d) return "—";
+    return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    }).format(d);
+}
+
+function countdownTo(iso?: string | null) {
+  const target = parseISO(iso);
+  if (!target) return { expired: false, ms: 0 };
+
+  const now = Date.now();
+  const diffMs = target.getTime() - now;
+  if (diffMs <= 0) return { expired: true, ms: 0 };
+
+  return { expired: false, ms: diffMs };
+}
+
+function pad2(n: number) {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function formatCountdown(ms: number) {
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+
+  // Show days if any, then HH:MM:SS
+  var time = "";
+  if (days > 1) time = `${days} Days, ` + time;
+  else time = days > 0 ? `${days} Day, ` + time: time;
+
+  if (hours > 1) time = time + `${hours} Hours,`;
+  else time = hours > 0 ? time + `${hours} Hour,`: time;
+
+  return `${time} ${minutes}:${pad2(seconds)} Minutes`;
+}
+
 // ---------------------------- UI Parts ---------------------------
+function DeadlineCard({ deadlineISO }: { deadlineISO?: string | null }) {
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    // Tick every second for a smooth countdown
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const { expired, ms } = countdownTo(deadlineISO);
+  const label = expired ? "The RSVP window has closed." : formatCountdown(ms);
+
+  return (
+    <section className="mx-auto max-w-2xl px-4 pt-8">
+      <div
+        className={
+          "rounded-2xl border p-5 sm:p-6 shadow-sm backdrop-blur " +
+          (expired ? "border-red-200 bg-red-50/80" : "border-ink/5 bg-[#FAF7EC]/80")
+        }
+      >
+        <h2 className="font-serif text-xl text-ink leading-tight">RSVP deadline</h2>
+        <p className="mt-1 text-sm text-ink/70">
+          {deadlineISO ? fmtDate(deadlineISO) : "TBD"}
+        </p>
+
+        <div
+          className="mt-3 rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-sm text-ink font-mono tabular-nums"
+          aria-live="polite"
+        >
+          {deadlineISO ? label : "We'll post the deadline soon."}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SearchSection({ onPick }: { onPick: (id: string) => void }) {
     const [q, setQ] = useState("");
     const [results, setResults] = useState<Array<{ id: string; label: string }> | null>(null);
@@ -377,22 +464,25 @@ function PartySection({
 }) {
     const [submitting, setSubmitting] = useState(false);
 
-    // Compute validation continuously
     const validation = useMemo(() => validateParty(party), [party]);
+
+    const partyDeadline = parseISO(party.rsvpDeadline);
+    const deadlinePassed = !!partyDeadline && partyDeadline.getTime() < Date.now();
 
     function updateMember(id: string, updater: (m: Member) => Member) {
         setParty({ ...party, members: party.members.map((m) => (m.id === id ? updater(m) : m)) });
     }
 
     async function handleSubmit() {
-        // Client-side gate
+        // Block if deadline passed
+        if (deadlinePassed) return;
+
+        // Existing validation
         if (!validation.ok) {
-            // Focus the email field if that's the problem, otherwise just alert politely
             if (validation.emailError) {
-                const el = document.querySelector<HTMLInputElement>("input[type='email']");
-                el?.focus();
+                document.querySelector<HTMLInputElement>("input[type='email']")?.focus();
             }
-            return; // don't submit
+            return;
         }
 
         setSubmitting(true);
@@ -480,9 +570,12 @@ function PartySection({
                 onSubmit={handleSubmit}
                 onBack={onBackToSearch}
                 submitting={submitting}
-                canSubmit={validation.ok}
+                // Disable when validation fails OR deadline is passed
+                canSubmit={validation.ok && !deadlinePassed}
                 notice={
-                    !validation.ok
+                    deadlinePassed
+                        ? `The RSVP deadline (${fmtDate(party.rsvpDeadline)}) has passed.`
+                        : !validation.ok
                         ? validation.emailError ||
                           validation.phoneError ||
                           validation.reminderError ||
@@ -584,6 +677,7 @@ export default function RSVP() {
     const [partyId, setPartyId] = useState<string | null>(null);
     const [party, setParty] = useState<Party | null>(null);
     const [loadingParty, setLoadingParty] = useState(false);
+    const [siteDeadline, setSiteDeadline] = useState<string | null>(null);
 
     async function handlePick(id: string) {
         setPartyId(id);
@@ -603,7 +697,7 @@ export default function RSVP() {
     return (
         <>
             <div className="fixed inset-0 -z-10">
-                <div className="absolute inset-0 bg-[url('/rsvp-bg.jpg')] bg-cover bg-center bg-no-repeat" />
+                <div className="absolute inset-0 bg-[url('/rsvp-bg.webp')] bg-cover bg-center bg-no-repeat" />
                 <div
                     className="absolute inset-0"
                     style={{
@@ -617,7 +711,12 @@ export default function RSVP() {
             {/* Content */}
             <main className="relative min-h-screen">
                 <div className="relative">
-                    {step === "search" && <SearchSection onPick={handlePick} />}
+                    {step === "search" && (
+                        <>
+                            <DeadlineCard deadlineISO={SITE_RSVP_DEADLINE_ISO} />
+                            <SearchSection onPick={handlePick} />
+                        </>
+                    )}
                     {step === "party" &&
                         party &&
                         (loadingParty ? (

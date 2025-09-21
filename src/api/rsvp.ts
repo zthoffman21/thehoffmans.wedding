@@ -14,6 +14,7 @@ export type Party = {
   contact: { email?: string; phone?: string };
   members: Member[];
   reminderOptIn?: boolean;
+  rsvpDeadline?: string;
 };
 
 // ---------- Backend DTOs (from your Worker) ----------
@@ -38,6 +39,7 @@ type PartyDTO = {
   contact_email?: string | null;
   contact_phone?: string | null;
   reminder_opt_in?: 0 | 1 | null;
+  rsvp_deadline?: string | null;
 };
 
 type GetPartyResponseDTO = {
@@ -68,6 +70,7 @@ function mapParty(dto: PartyDTO, members: PartyMemberDTO[]): Party {
     contact: { email: dto.contact_email ?? undefined, phone: dto.contact_phone ?? undefined },
     members: members.map(mapMember),
     reminderOptIn: dto.reminder_opt_in === 1,
+    rsvpDeadline: dto.rsvp_deadline ?? undefined,
   };
 }
 

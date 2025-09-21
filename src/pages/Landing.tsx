@@ -8,7 +8,7 @@ export default function Landing() {
       <div className="relative isolate">
         <div
           className="absolute inset-0 z-0 bg-cover bg-[center_55%] sm:bg-[center_40%] md:bg-[center_57.5%]"
-          style={{ backgroundImage: "url('/landing-bg.jpg?v=3')" }}
+          style={{ backgroundImage: "url('/landing-bg.webp?v=3')" }}
           aria-hidden
         />
         <div

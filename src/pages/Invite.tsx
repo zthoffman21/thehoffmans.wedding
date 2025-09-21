@@ -11,7 +11,7 @@ export default function Invite() {
             {/* Background photo */}
             <div
                 className="absolute inset-0 z-0 bg-cover bg-center"
-                style={{ backgroundImage: "url('/invite-bg.jpg?v=3')" }}
+                style={{ backgroundImage: "url('/invite-bg.webp?v=3')" }}
                 aria-hidden="true"
             />
             {/* Vignette for legibility */}

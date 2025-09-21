@@ -23,7 +23,7 @@ export default function AdminDashboard() {
         <section className="relative min-h-screen bg-[#F2EFE7] overflow-x-hidden">
             <div
                 className="absolute inset-0 z-0 bg-cover bg-[center_55%] sm:bg-[center_40%] md:bg-[center_57.5%] pointer-events-none"
-                style={{ backgroundImage: "url('/guide-bg.jpg?v=3')" }}
+                style={{ backgroundImage: "url('/admin-bg.webp?v=3')" }}
                 aria-hidden
             />
 

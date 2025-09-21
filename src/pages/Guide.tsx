@@ -66,7 +66,7 @@ export default function Guide() {
     <section className="relative bg-[#F2EFE7] min-h-screen overflow-x-hidden">
       <div
         className="absolute inset-0 z-0 bg-cover bg-[center_55%] sm:bg-[center_40%] md:bg-[center_57.5%]"
-        style={{ backgroundImage: "url('/guide-bg.jpg?v=3')" }}
+        style={{ backgroundImage: "url('/guide-bg.webp?v=3')" }}
         aria-hidden
       />
       <div

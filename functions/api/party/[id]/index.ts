@@ -5,7 +5,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, params }) => {
     const id = String(params.id);
 
     const party = await env.DB.prepare(
-        `SELECT id, display_name, contact_email, contact_phone, reminder_opt_in FROM parties WHERE id = ?`
+        `SELECT id, display_name, contact_email, contact_phone, reminder_opt_in, rsvp_deadline FROM parties WHERE id = ?`
     )
         .bind(id)
         .first();
