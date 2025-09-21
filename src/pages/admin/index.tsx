@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { searchParties as apiSearchParties } from "../../api/rsvp";
 import { formatNYDateTime } from "../../lib/time";
 
-
 /* =========================================================================
    Types shared by tabs
    ========================================================================= */
@@ -792,7 +791,7 @@ function GalleryTab() {
         try {
             setSaving(true);
             await updateGallerySettings({
-                auto_publish_uploads: !!autoPublish,
+                auto_publish_uploads: autoPublish,
                 upload_rate_per_hour: Math.max(1, Number(ratePerHour || 20)),
             });
             alert("Settings saved");
