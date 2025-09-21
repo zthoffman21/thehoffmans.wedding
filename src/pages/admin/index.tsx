@@ -834,41 +834,43 @@ function GalleryTab() {
         <div className="space-y-6">
             {/* Settings card */}
             <div className="grid gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
-                <label className="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        className="size-4"
-                        checked={autoPublish}
-                        onChange={(e) => setAutoPublish(e.target.checked)}
-                    />
-                    <span className="text-sm">Auto-publish uploads (skip approval)</span>
-                </label>
-                <label className="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        className="size-4"
-                        checked={purgeRejected}
-                        onChange={(e) => setPurgeRejected(e.target.checked)}
-                    />
-                    <span className="text-sm">Purge rejected uploads from R2</span>
-                </label>
+                <div>
+                    <label className="flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            className="size-4"
+                            checked={autoPublish}
+                            onChange={(e) => setAutoPublish(e.target.checked)}
+                        />
+                        <span className="text-sm">Auto-publish uploads (skip approval)</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            className="size-4"
+                            checked={purgeRejected}
+                            onChange={(e) => setPurgeRejected(e.target.checked)}
+                        />
+                        <span className="text-sm">Purge rejected uploads from R2</span>
+                    </label>
 
-                <div className="flex items-center gap-3">
-                    <label className="text-sm">Upload rate / hour</label>
-                    <input
-                        type="number"
-                        className="w-28 rounded border p-1"
-                        value={ratePerHour}
-                        min={1}
-                        onChange={(e) => setRatePerHour(Number(e.target.value))}
-                    />
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm">Upload rate / hour</label>
+                        <input
+                            type="number"
+                            className="w-28 rounded border p-1"
+                            value={ratePerHour}
+                            min={1}
+                            onChange={(e) => setRatePerHour(Number(e.target.value))}
+                        />
+                    </div>
                 </div>
 
                 <div className="flex items-center sm:justify-end">
                     <button
                         onClick={onSaveSettings}
                         disabled={saving}
-                        className="rounded-xl bg-ink/90 px-3 py-2 text-white disabled:opacity-50"
+                        className="rounded-xl bg-ink/90 px-3 py-2 text-ink disabled:opacity-50"
                     >
                         {saving ? "Saving…" : "Save settings"}
                     </button>

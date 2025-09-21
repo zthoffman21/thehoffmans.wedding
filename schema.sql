@@ -8,6 +8,10 @@ DROP TABLE IF EXISTS idempotency;
 DROP TABLE IF EXISTS rate_log;
 DROP TABLE IF EXISTS parties;
 
+DROP TABLE IF EXISTS photos;
+DROP TABLE IF EXISTS albums;
+DROP TABLE IF EXISTS settings;
+
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
@@ -101,7 +105,8 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 INSERT OR IGNORE INTO settings(key, value) VALUES
   ('auto_publish_uploads','0'),
-  ('upload_rate_per_hour','20');
+  ('upload_rate_per_hour','20'),
+  ('purge_rejected_uploads', '1');
 
 
 

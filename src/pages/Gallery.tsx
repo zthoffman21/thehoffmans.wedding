@@ -58,7 +58,7 @@ export default function Gallery() {
         <h1 className="text-2xl font-semibold">Shared Album</h1>
         <button
           onClick={() => setShowUpload(true)}
-          className="rounded-xl px-3 py-2 bg-ink/90 text-white"
+          className="rounded-xl px-3 py-2 bg-ink/90 text-ink"
         >
           Add photos
         </button>

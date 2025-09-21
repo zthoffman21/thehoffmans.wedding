@@ -123,7 +123,7 @@ export default function GalleryUploadInline({ onDone }: { onDone?: () => void })
 
       <button
         type="submit"
-        className="rounded-xl px-3 py-2 bg-ink/90 text-white disabled:opacity-50"
+        className="rounded-xl px-3 py-2 bg-ink/90 text-ink disabled:opacity-50"
         disabled={busy}
       >
         {busy ? `Uploading… ${progress}%` : "Upload"}
