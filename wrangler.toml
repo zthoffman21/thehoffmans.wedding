@@ -18,7 +18,7 @@ database_id = "b5254ca7-205c-46e1-b96f-1275987fb241"
 
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "wedding-photos"
+R2_BUCKET = "wedding-photos"
 
 [dev]
 port = 8787
