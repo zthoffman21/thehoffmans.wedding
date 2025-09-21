@@ -76,6 +76,22 @@ async function asJson<T>(res: Response): Promise<T> {
 }
 
 // admin endpoints we added on the server
+export async function getSettings() {
+    const res = await fetch(`/api/admin/settings`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+    });
+    const data = await asJson<{
+        ok: true;
+        settings: {
+            auto_publish_uploads: boolean;
+            upload_rate_per_hour: number;
+            purge_rejected_uploads: boolean;
+        };
+    }>(res);
+    return data.settings;
+}
 async function listAdminPhotos(status = "pending", limit = 100) {
     const res = await fetch(
         `/api/admin/photos?status=${encodeURIComponent(status)}&limit=${limit}`,
@@ -101,6 +117,7 @@ async function rejectPhoto(id: string) {
 async function updateGallerySettings(opts: {
     auto_publish_uploads?: boolean;
     upload_rate_per_hour?: number;
+    purge_rejected_uploads?: boolean;
 }) {
     const res = await fetch(`/api/admin/settings`, {
         method: "POST",
@@ -751,6 +768,7 @@ function GalleryTab() {
     const [autoPublish, setAutoPublish] = useState(false);
     const [ratePerHour, setRatePerHour] = useState<number>(20);
     const [saving, setSaving] = useState(false);
+    const [purgeRejected, setPurgeRejected] = useState(true);
 
     async function refresh() {
         try {
@@ -766,8 +784,17 @@ function GalleryTab() {
     }
 
     useEffect(() => {
+        getSettings()
+            .then((s) => {
+                setAutoPublish(!!s.auto_publish_uploads);
+                setRatePerHour(Number(s.upload_rate_per_hour || 20));
+                setPurgeRejected(!!s.purge_rejected_uploads);
+            })
+            .catch((e) => {
+                console.error("Failed to load settings", e);
+            });
+
         refresh();
-        // If you add GET /api/admin/settings later, load and set autoPublish/ratePerHour here.
     }, []);
 
     async function onApprove(id: string) {
@@ -793,6 +820,7 @@ function GalleryTab() {
             await updateGallerySettings({
                 auto_publish_uploads: autoPublish,
                 upload_rate_per_hour: Math.max(1, Number(ratePerHour || 20)),
+                purge_rejected_uploads: !!purgeRejected,
             });
             alert("Settings saved");
         } catch (e: any) {
@@ -814,6 +842,15 @@ function GalleryTab() {
                         onChange={(e) => setAutoPublish(e.target.checked)}
                     />
                     <span className="text-sm">Auto-publish uploads (skip approval)</span>
+                </label>
+                <label className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        className="size-4"
+                        checked={purgeRejected}
+                        onChange={(e) => setPurgeRejected(e.target.checked)}
+                    />
+                    <span className="text-sm">Purge rejected uploads from R2</span>
                 </label>
 
                 <div className="flex items-center gap-3">
