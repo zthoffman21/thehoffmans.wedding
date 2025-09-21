@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Masonry from "../components/Masonry";
+import GalleryUploadInline from "./GalleryUploadInline";
 
 type Photo = {
   key: string;
@@ -19,6 +20,7 @@ export default function Gallery() {
   const [items, setItems] = useState<Photo[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   async function fetchMore() {
@@ -26,7 +28,7 @@ export default function Gallery() {
     const res = await fetch(`/api/gallery?limit=40${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
     const json = await res.json();
     const normalized = (json.items as any[]).map((p) => ({
-      key: p.key ?? p.id,            // fallback if backend still sends "id"
+      key: p.key ?? p.id,
       width: p.width,
       height: p.height,
       caption: p.caption,
@@ -54,7 +56,12 @@ export default function Gallery() {
     <section className="container-px py-8">
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Shared Album</h1>
-        <a href="/gallery/upload" className="rounded-xl px-3 py-2 bg-ink/90 text-ink">Add photos</a>
+        <button
+          onClick={() => setShowUpload(true)}
+          className="rounded-xl px-3 py-2 bg-ink/90 text-white"
+        >
+          Add photos
+        </button>
       </header>
 
       <Masonry>
@@ -84,6 +91,19 @@ export default function Gallery() {
 
       <div ref={moreRef} className="h-10" />
       {loading && <p className="text-center text-ink/60 mt-4">Loading…</p>}
+
+      {/* Modal */}
+      {showUpload && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Upload photos</h2>
+              <button onClick={() => setShowUpload(false)} className="text-ink/70">✕</button>
+            </div>
+            <GalleryUploadInline onDone={() => setShowUpload(false)} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

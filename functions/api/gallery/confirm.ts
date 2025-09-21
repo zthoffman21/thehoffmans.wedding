@@ -2,7 +2,7 @@
 import type { Env } from "../_utils";
 
 type PhotoMeta = {
-  imageId?: string;           // R2 key (will be photos.id)
+  imageId?: string;
   size?: number | null;
   caption?: string | null;
   display_name?: string | null;
@@ -10,8 +10,8 @@ type PhotoMeta = {
   height?: number | null;
 };
 type ConfirmBody =
-  | { key?: string; size?: number; token?: string }
-  | { photos?: PhotoMeta[]; token?: string };
+  | { key?: string; size?: number }
+  | { photos?: PhotoMeta[] };
 
 const json = (d: unknown, init: ResponseInit = {}) =>
   new Response(JSON.stringify(d), {
@@ -47,19 +47,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       .filter(p => !!p.imageId);
     if (photos.length === 0) return json({ ok: false, message: "No photos to confirm" }, { status: 400 });
 
-    // ---- optional Turnstile once for the batch ----
-    const token = (body as any).token as string | undefined;
-    if (env.TURNSTILE_SECRET) {
-      if (!token) return json({ ok: false, message: "Missing Turnstile token" }, { status: 400 });
-      const form = new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token });
-      const verify = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: form,
-      }).then(r => r.json() as Promise<{ success: boolean; ["error-codes"]?: string[] }>)
-        .catch(() => ({ success: false, "error-codes": ["verify_fetch_error"] }));
-      if (!verify.success) return json({ ok: false, message: "Turnstile failed", errors: verify["error-codes"] || [] }, { status: 403 });
-    }
+    // ---- (Removed Turnstile) ----
 
     // ---- R2 sanity (HEAD) ----
     for (const p of photos) {
@@ -71,10 +59,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     // ---- moderation defaults from settings ----
-    const row = await env.DB.prepare(`SELECT value FROM settings WHERE key='auto_publish_uploads' LIMIT 1`).first<{ value?: string }>();
-    const auto = row?.value === "1"; // '1' => auto publish
+    const row = await env.DB.prepare(
+      `SELECT value FROM settings WHERE key='auto_publish_uploads' LIMIT 1`
+    ).first<{ value?: string }>();
+    const auto = row?.value === "1"; // '1' => auto publish  (else pending review)
     const initialStatus = auto ? "approved" : "pending";
-    const initialPublic = auto ? 1 : 0;
+    const initialPublic = auto ? 1 : 0; // hide until approved when pending  :contentReference[oaicite:10]{index=10}
 
     // ---- batch insert (id = imageId) ----
     const stmts = photos.map(p =>
@@ -95,7 +85,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     );
     await env.DB.batch(stmts);
 
-    return json({ ok: true, inserted: photos.length });
+    return json({ ok: true, inserted: photos.length, status: initialStatus });
   } catch (err: any) {
     console.error("confirm batch error:", err);
     return json({ ok: false, message: String(err?.message || err) }, { status: 500 });

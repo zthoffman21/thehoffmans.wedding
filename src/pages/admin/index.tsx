@@ -1,6 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { searchParties as apiSearchParties } from "../../api/rsvp";
 import { formatNYDateTime } from "../../lib/time";
+import {
+  listAdminPhotos,
+  approvePhoto,
+  rejectPhoto,
+  updateSettings as updateGallerySettings,
+  type AdminPhoto,
+} from "../../api/adminPhoto";
+
+
+/* =========================================================================
+   Types shared by tabs
+   ========================================================================= */
 
 type SubmissionRow = {
     submission_id: string;
@@ -19,8 +31,111 @@ type SubmissionRow = {
     notes: string;
 };
 
+type PartyDetail = {
+    id: string;
+    slug: string;
+    display_name: string;
+    contact_email?: string | null;
+    contact_phone?: string | null;
+    reminder_opt_in: number;
+    can_rsvp: number;
+    rsvp_deadline?: string | null;
+    members: Array<MemberDetail>;
+};
+
+type MemberDetail = {
+    id: string;
+    party_id: string;
+    full_name: string;
+    is_plus_one: number;
+    plus_one_for?: string | null;
+    sort_order: number;
+    invite_ceremony: number;
+    invite_reception: number;
+    // attendance
+    attending_ceremony?: number | null;
+    attending_reception?: number | null;
+    dietary?: string | null;
+    notes?: string | null;
+};
+
+/* =========================================================================
+   NEW: Admin gallery types + tiny helpers
+   ========================================================================= */
+
+type AdminPhoto = {
+    id: string; // R2 key (same as photos.id)
+    caption?: string | null;
+    display_name?: string | null;
+    width?: number | null;
+    height?: number | null;
+    created_at: string;
+};
+
+// lightweight fetch-as-json with error surfacing
+async function asJson<T>(res: Response): Promise<T> {
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || (body && (body as any).ok === false)) {
+        const msg =
+            (body as any)?.message || (body as any)?.error || `Request failed (${res.status})`;
+        throw new Error(msg);
+    }
+    return body as T;
+}
+
+// admin endpoints we added on the server
+async function listAdminPhotos(status = "pending", limit = 100) {
+    const res = await fetch(
+        `/api/admin/photos?status=${encodeURIComponent(status)}&limit=${limit}`,
+        {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+        }
+    );
+    return asJson<{ ok: true; items: AdminPhoto[] }>(res);
+}
+async function approvePhoto(id: string) {
+    const res = await fetch(`/api/admin/photos/${encodeURIComponent(id)}/approve`, {
+        method: "POST",
+    });
+    return asJson<{ ok: true }>(res);
+}
+async function rejectPhoto(id: string) {
+    const res = await fetch(`/api/admin/photos/${encodeURIComponent(id)}/reject`, {
+        method: "POST",
+    });
+    return asJson<{ ok: true }>(res);
+}
+async function updateGallerySettings(opts: {
+    auto_publish_uploads?: boolean;
+    upload_rate_per_hour?: number;
+}) {
+    const res = await fetch(`/api/admin/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(opts),
+    });
+    return asJson<{ ok: true; updated: Record<string, string> }>(res);
+}
+
+/* =========================================================================
+   Image URL helper for previews
+   ========================================================================= */
+
+const IMG_ORIGIN = import.meta.env.VITE_IMG_PUBLIC_ORIGIN;
+function cfImg(key: string, w: number, q = 75) {
+    return `/cdn-cgi/image/width=${w},quality=${q},format=auto/${IMG_ORIGIN}/${encodeURI(key)}`;
+}
+
+/* =========================================================================
+   Admin Dashboard (now with "Gallery" tab)
+   ========================================================================= */
+
 export default function AdminDashboard() {
-    const [tab, setTab] = useState<"overview" | "submissions" | "missing" | "manage">("overview");
+    const [tab, setTab] = useState<"overview" | "submissions" | "missing" | "manage" | "gallery">(
+        "overview"
+    );
+
     return (
         <section className="relative min-h-screen bg-[#F2EFE7] overflow-x-hidden">
             <div
@@ -28,7 +143,6 @@ export default function AdminDashboard() {
                 style={{ backgroundImage: "url('/admin-bg.webp?v=3')" }}
                 aria-hidden
             />
-
             <div
                 className="absolute inset-0 z-10 pointer-events-none"
                 style={{
@@ -38,10 +152,12 @@ export default function AdminDashboard() {
                 }}
                 aria-hidden
             />
+
             <section className="relative z-20 mx-auto max-w-6xl p-6 text-ink">
                 <h1 className="mb-6 text-3xl font-semibold">Admin Dashboard</h1>
+
                 <nav className="mb-6 flex gap-2">
-                    {["overview", "submissions", "missing", "manage"].map((t) => (
+                    {["overview", "submissions", "missing", "manage", "gallery"].map((t) => (
                         <button
                             key={t}
                             onClick={() => setTab(t as any)}
@@ -64,10 +180,15 @@ export default function AdminDashboard() {
                 {tab === "submissions" && <Submissions />}
                 {tab === "missing" && <Missing />}
                 {tab === "manage" && <Manage />}
+                {tab === "gallery" && <GalleryTab />}
             </section>
         </section>
     );
 }
+
+/* =========================================================================
+   Overview
+   ========================================================================= */
 
 function Overview() {
     const [data, setData] = useState<any>(null);
@@ -111,6 +232,10 @@ function Overview() {
         </div>
     );
 }
+
+/* =========================================================================
+   Submissions
+   ========================================================================= */
 
 function Submissions() {
     const [items, setItems] = useState<SubmissionRow[]>([]);
@@ -226,6 +351,10 @@ function Submissions() {
     );
 }
 
+/* =========================================================================
+   Missing
+   ========================================================================= */
+
 function Missing() {
     const [data, setData] = useState<{ membersNoRSVP: any[]; partiesNoRSVP: any[] }>();
     useEffect(() => {
@@ -277,33 +406,9 @@ function Missing() {
     );
 }
 
-type PartyDetail = {
-    id: string;
-    slug: string;
-    display_name: string;
-    contact_email?: string | null;
-    contact_phone?: string | null;
-    reminder_opt_in: number;
-    can_rsvp: number;
-    rsvp_deadline?: string | null;
-    members: Array<MemberDetail>;
-};
-
-type MemberDetail = {
-    id: string;
-    party_id: string;
-    full_name: string;
-    is_plus_one: number;
-    plus_one_for?: string | null;
-    sort_order: number;
-    invite_ceremony: number;
-    invite_reception: number;
-    // attendance
-    attending_ceremony?: number | null;
-    attending_reception?: number | null;
-    dietary?: string | null;
-    notes?: string | null;
-};
+/* =========================================================================
+   Manage
+   ========================================================================= */
 
 function Manage() {
     const [q, setQ] = useState("");
@@ -387,7 +492,7 @@ function Manage() {
                 </div>
             </div>
 
-            {/* Right: your existing editor */}
+            {/* Right: editor */}
             <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
                 {!party ? (
                     <div className="text-ink/60">Pick a party to edit.</div>
@@ -448,7 +553,7 @@ function PartyEditor({
     }
 
     async function addMember() {
-        const res = await fetch(`/api/admin/member`, {
+        await fetch(`/api/admin/member`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -641,6 +746,201 @@ function MemberRow({ m, onSaved }: { m: MemberDetail; onSaved: () => void }) {
     );
 }
 
+/* =========================================================================
+   Gallery moderation tab (queue + settings)
+   ========================================================================= */
+
+function GalleryTab() {
+    const [queue, setQueue] = useState<AdminPhoto[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [err, setErr] = useState<string | null>(null);
+
+    // settings local UI state (defaults match schema seeds)
+    const [autoPublish, setAutoPublish] = useState(false);
+    const [ratePerHour, setRatePerHour] = useState<number>(20);
+    const [saving, setSaving] = useState(false);
+
+    async function refresh() {
+        try {
+            setLoading(true);
+            setErr(null);
+            const res = await listAdminPhotos("pending", 200);
+            setQueue(res.items || []);
+        } catch (e: any) {
+            setErr(e?.message || String(e));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        refresh();
+        // If you add GET /api/admin/settings later, load and set autoPublish/ratePerHour here.
+    }, []);
+
+    async function onApprove(id: string) {
+        try {
+            await approvePhoto(id);
+            setQueue((q) => q.filter((x) => x.id !== id));
+        } catch (e: any) {
+            alert(e?.message || "Approve failed");
+        }
+    }
+    async function onReject(id: string) {
+        try {
+            await rejectPhoto(id);
+            setQueue((q) => q.filter((x) => x.id !== id));
+        } catch (e: any) {
+            alert(e?.message || "Reject failed");
+        }
+    }
+
+    async function onSaveSettings() {
+        try {
+            setSaving(true);
+            await updateGallerySettings({
+                auto_publish_uploads: !!autoPublish,
+                upload_rate_per_hour: Math.max(1, Number(ratePerHour || 20)),
+            });
+            alert("Settings saved");
+        } catch (e: any) {
+            alert(e?.message || "Save failed");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Settings card */}
+            <div className="grid gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <label className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        className="size-4"
+                        checked={autoPublish}
+                        onChange={(e) => setAutoPublish(e.target.checked)}
+                    />
+                    <span className="text-sm">Auto-publish uploads (skip approval)</span>
+                </label>
+
+                <div className="flex items-center gap-3">
+                    <label className="text-sm">Upload rate / hour</label>
+                    <input
+                        type="number"
+                        className="w-28 rounded border p-1"
+                        value={ratePerHour}
+                        min={1}
+                        onChange={(e) => setRatePerHour(Number(e.target.value))}
+                    />
+                </div>
+
+                <div className="flex items-center sm:justify-end">
+                    <button
+                        onClick={onSaveSettings}
+                        disabled={saving}
+                        className="rounded-xl bg-ink/90 px-3 py-2 text-white disabled:opacity-50"
+                    >
+                        {saving ? "Saving…" : "Save settings"}
+                    </button>
+                </div>
+
+                <p className="sm:col-span-3 text-xs text-ink/60">
+                    When auto-publish is off, new photos are saved as <em>pending</em> and hidden
+                    until approved via this queue (driven by <code>photos.status</code> /{" "}
+                    <code>photos.is_public</code> and the
+                    <code>settings</code> table). :contentReference[oaicite:2]
+                </p>
+            </div>
+
+            {/* Queue */}
+            <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Pending queue</h2>
+                <button
+                    onClick={refresh}
+                    className="rounded-lg border px-3 py-1 text-sm"
+                    title="Refresh"
+                >
+                    Refresh
+                </button>
+            </div>
+
+            {err && (
+                <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+                    {err}
+                </div>
+            )}
+
+            {loading ? (
+                <p>Loading…</p>
+            ) : queue.length === 0 ? (
+                <p className="text-ink/60">No pending uploads.</p>
+            ) : (
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {queue.map((p) => (
+                        <li key={p.id} className="rounded-2xl border bg-white p-3">
+                            <figure className="mb-2">
+                                <img
+                                    className="w-full rounded-xl bg-neutral-200 object-cover"
+                                    src={cfImg(p.id, 900)}
+                                    srcSet={`
+                    ${cfImg(p.id, 480, 70)} 480w,
+                    ${cfImg(p.id, 900, 75)} 900w,
+                    ${cfImg(p.id, 1400, 75)} 1400w
+                  `}
+                                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+                                    alt={p.caption || "Pending photo"}
+                                    style={
+                                        p.width && p.height
+                                            ? { aspectRatio: `${p.width} / ${p.height}` }
+                                            : undefined
+                                    }
+                                    loading="lazy"
+                                />
+                                {(p.caption || p.display_name) && (
+                                    <figcaption className="mt-1 text-xs text-ink/70">
+                                        {p.caption} {p.display_name ? `— ${p.display_name}` : ""}
+                                    </figcaption>
+                                )}
+                            </figure>
+
+                            <div className="flex items-center justify-between">
+                                <button
+                                    onClick={() => onReject(p.id)}
+                                    className="rounded-lg border px-3 py-1 text-sm"
+                                >
+                                    Reject
+                                </button>
+                                <button
+                                    onClick={() => onApprove(p.id)}
+                                    className="rounded-lg bg-ink/90 px-3 py-1 text-sm text-white"
+                                >
+                                    Approve
+                                </button>
+                            </div>
+
+                            <p className="mt-2 text-[11px] text-ink/50">
+                                Uploaded:{" "}
+                                {new Date(p.created_at.replace(" ", "T") + "Z").toLocaleString()}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <p className="mt-8 text-xs text-ink/60">
+                The public gallery endpoint only returns <code>status='approved'</code> with{" "}
+                <code>is_public=1</code>, so pending items never appear until approved.
+                :contentReference[oaicite:3]
+            </p>
+        </div>
+    );
+}
+
+/* =========================================================================
+   Small UI primitives
+   ========================================================================= */
+
 function L({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <label className="block text-sm">
@@ -653,7 +953,6 @@ type InputStringProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value
     value: string;
     onChange: (value: string) => void;
 };
-
 function I({ value, onChange, ...rest }: InputStringProps) {
     return (
         <input

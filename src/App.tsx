@@ -7,7 +7,7 @@ import Info from "./pages/Info";
 import Invite from "./pages/Invite";
 import Guide from "./pages/Guide";
 import AdminDashboard from "./pages/admin";
-import GalleryUpload from "./pages/GalleryUpload";
+import GalleryUpload from "./pages/GalleryUploadInline";
 
 export default function App() {
     const location = useLocation();
