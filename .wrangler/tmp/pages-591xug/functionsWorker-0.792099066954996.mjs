@@ -13029,6 +13029,104 @@ async function notifyEmail(env, subject, text) {
 }
 __name(notifyEmail, "notifyEmail");
 
+// api/admin/member/[id].ts
+var onRequest = /* @__PURE__ */ __name(async ({ env, params, request }) => {
+  const id = String(params.id);
+  if (request.method === "PATCH") {
+    const b = await request.json();
+    await env.DB.prepare(
+      `UPDATE members
+       SET full_name = COALESCE(?, full_name),
+           is_plus_one = ?,
+           plus_one_for = ?,
+           sort_order = ?,
+           invite_ceremony = ?,
+           invite_reception = ?
+       WHERE id = ?`
+    ).bind(
+      b.full_name ?? null,
+      Number(!!b.is_plus_one),
+      b.plus_one_for ?? null,
+      Number(b.sort_order ?? 0),
+      Number(!!b.invite_ceremony),
+      Number(!!b.invite_reception),
+      id
+    ).run();
+    await env.DB.prepare(
+      `INSERT INTO member_attendance_current (member_id, attending_ceremony, attending_reception, dietary, notes)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(member_id) DO UPDATE SET
+         attending_ceremony = excluded.attending_ceremony,
+         attending_reception = excluded.attending_reception,
+         dietary = excluded.dietary,
+         notes = excluded.notes`
+    ).bind(
+      id,
+      b.attending_ceremony === null || b.attending_ceremony === void 0 ? null : Number(b.attending_ceremony),
+      b.attending_reception === null || b.attending_reception === void 0 ? null : Number(b.attending_reception),
+      b.dietary ?? null,
+      b.notes ?? null
+    ).run();
+    return json2({ ok: true });
+  }
+  if (request.method === "DELETE") {
+    await env.DB.prepare(`DELETE FROM members WHERE id = ?`).bind(id).run();
+    return json2({ ok: true });
+  }
+  return json2({ error: "method not allowed" }, 405);
+}, "onRequest");
+
+// api/admin/party/[id].ts
+var onRequest2 = /* @__PURE__ */ __name(async ({ env, params, request }) => {
+  const id = String(params.id);
+  if (request.method === "GET") {
+    const party = await env.DB.prepare(
+      `SELECT id, slug, display_name, contact_email, contact_phone, reminder_opt_in, can_rsvp, rsvp_deadline
+       FROM parties WHERE id = ? LIMIT 1`
+    ).bind(id).first();
+    if (!party) return json2({ error: "not found" }, 404);
+    const members = await env.DB.prepare(
+      `SELECT m.id, m.party_id, m.full_name, m.is_plus_one, m.plus_one_for, m.sort_order,
+              m.invite_ceremony, m.invite_reception,
+              a.attending_ceremony, a.attending_reception, a.dietary, a.notes
+       FROM members m
+       LEFT JOIN member_attendance_current a ON a.member_id = m.id
+       WHERE m.party_id = ?
+       ORDER BY m.sort_order, m.full_name`
+    ).bind(id).all();
+    return json2({ party: { ...party, members: members.results ?? [] } });
+  }
+  if (request.method === "PATCH") {
+    const body = await request.json();
+    await env.DB.prepare(
+      `UPDATE parties
+       SET slug = COALESCE(?, slug),
+           display_name = COALESCE(?, display_name),
+           contact_email = ?,
+           contact_phone = ?,
+           reminder_opt_in = ?,
+           can_rsvp = ?,
+           rsvp_deadline = ?
+       WHERE id = ?`
+    ).bind(
+      body.slug ?? null,
+      body.display_name ?? null,
+      body.contact_email ?? null,
+      body.contact_phone ?? null,
+      Number(!!body.reminder_opt_in),
+      Number(!!body.can_rsvp),
+      body.rsvp_deadline ?? null,
+      id
+    ).run();
+    return json2({ ok: true });
+  }
+  if (request.method === "DELETE") {
+    await env.DB.prepare(`DELETE FROM parties WHERE id = ?`).bind(id).run();
+    return json2({ ok: true });
+  }
+  return json2({ error: "method not allowed" }, 405);
+}, "onRequest");
+
 // api/party/[id]/submit.ts
 var onRequestPost = /* @__PURE__ */ __name(async ({ env, params, request }) => {
   try {
@@ -13151,6 +13249,28 @@ Submission ID: ${submissionId}
     );
   }
 }, "onRequestPost");
+
+// api/admin/member/index.ts
+var onRequestPost2 = /* @__PURE__ */ __name(async ({ env, request }) => {
+  const b = await request.json();
+  if (!b?.party_id || !b?.full_name) return json2({ error: "party_id and full_name required" }, 400);
+  const id = newId?.() ?? crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO members (id, party_id, full_name, is_plus_one, plus_one_for, sort_order, invite_ceremony, invite_reception)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id,
+    b.party_id,
+    b.full_name,
+    Number(!!b.is_plus_one),
+    b.plus_one_for ?? null,
+    Number(b.sort_order ?? 0),
+    Number(b.invite_ceremony ?? 1),
+    Number(b.invite_reception ?? 1)
+  ).run();
+  return json2({ ok: true, id });
+}, "onRequestPost");
+var onRequest3 = onRequestPost2;
 
 // api/admin/_util.ts
 function json3(data, init) {
@@ -13387,7 +13507,7 @@ async function handleGet(env, request) {
   }
 }
 __name(handleGet, "handleGet");
-var onRequest = /* @__PURE__ */ __name(async ({ env, request }) => {
+var onRequest4 = /* @__PURE__ */ __name(async ({ env, request }) => {
   if (request.method === "GET" || request.method === "HEAD" || request.method === "POST") {
     return handleGet(env, request);
   }
@@ -13445,7 +13565,7 @@ var onRequestGet7 = /* @__PURE__ */ __name(async ({ env }) => {
   }
 }, "onRequestGet");
 
-// ../.wrangler/tmp/pages-DrXqVa/functionsRoutes-0.06950392221928059.mjs
+// ../.wrangler/tmp/pages-591xug/functionsRoutes-0.45602879466634083.mjs
 var routes = [
   {
     routePath: "/api/admin/export/latest-rsvps",
@@ -13455,11 +13575,32 @@ var routes = [
     modules: [onRequestGet]
   },
   {
+    routePath: "/api/admin/member/:id",
+    mountPath: "/api/admin/member",
+    method: "",
+    middlewares: [],
+    modules: [onRequest]
+  },
+  {
+    routePath: "/api/admin/party/:id",
+    mountPath: "/api/admin/party",
+    method: "",
+    middlewares: [],
+    modules: [onRequest2]
+  },
+  {
     routePath: "/api/party/:id/submit",
     mountPath: "/api/party/:id",
     method: "POST",
     middlewares: [],
     modules: [onRequestPost]
+  },
+  {
+    routePath: "/api/admin/member",
+    mountPath: "/api/admin/member",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost2]
   },
   {
     routePath: "/api/admin/missing",
@@ -13490,11 +13631,18 @@ var routes = [
     modules: [onRequestGet5]
   },
   {
+    routePath: "/api/admin/member",
+    mountPath: "/api/admin/member",
+    method: "",
+    middlewares: [],
+    modules: [onRequest3]
+  },
+  {
     routePath: "/api/party/search",
     mountPath: "/api/party",
     method: "",
     middlewares: [],
-    modules: [onRequest]
+    modules: [onRequest4]
   },
   {
     routePath: "/api/party/:id",
@@ -13999,7 +14147,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-L0mbaT/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-aILA24/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -14031,7 +14179,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-L0mbaT/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-aILA24/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -14131,4 +14279,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default as default
 };
-//# sourceMappingURL=functionsWorker-0.08563278231273053.mjs.map
+//# sourceMappingURL=functionsWorker-0.792099066954996.mjs.map

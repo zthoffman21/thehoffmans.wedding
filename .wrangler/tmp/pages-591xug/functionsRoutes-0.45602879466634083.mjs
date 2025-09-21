@@ -1,9 +1,13 @@
 import { onRequestGet as __api_admin_export_latest_rsvps_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\export\\latest-rsvps.ts"
+import { onRequest as __api_admin_member__id__ts_onRequest } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\member\\[id].ts"
+import { onRequest as __api_admin_party__id__ts_onRequest } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\party\\[id].ts"
 import { onRequestPost as __api_party__id__submit_ts_onRequestPost } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\[id]\\submit.ts"
+import { onRequestPost as __api_admin_member_index_ts_onRequestPost } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\member\\index.ts"
 import { onRequestGet as __api_admin_missing_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\missing.ts"
 import { onRequestGet as __api_admin_overview_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\overview.ts"
 import { onRequestGet as __api_admin_parties_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\parties.ts"
 import { onRequestGet as __api_admin_submissions_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\submissions.ts"
+import { onRequest as __api_admin_member_index_ts_onRequest } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\admin\\member\\index.ts"
 import { onRequest as __api_party_search_ts_onRequest } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\search.ts"
 import { onRequestGet as __api_party__id__index_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\party\\[id]\\index.ts"
 import { onRequestGet as __api_health_ts_onRequestGet } from "C:\\Users\\zachh\\Non_SchoolRelatedCode\\thehoffmans.wedding\\functions\\api\\health.ts"
@@ -17,11 +21,32 @@ export const routes = [
       modules: [__api_admin_export_latest_rsvps_ts_onRequestGet],
     },
   {
+      routePath: "/api/admin/member/:id",
+      mountPath: "/api/admin/member",
+      method: "",
+      middlewares: [],
+      modules: [__api_admin_member__id__ts_onRequest],
+    },
+  {
+      routePath: "/api/admin/party/:id",
+      mountPath: "/api/admin/party",
+      method: "",
+      middlewares: [],
+      modules: [__api_admin_party__id__ts_onRequest],
+    },
+  {
       routePath: "/api/party/:id/submit",
       mountPath: "/api/party/:id",
       method: "POST",
       middlewares: [],
       modules: [__api_party__id__submit_ts_onRequestPost],
+    },
+  {
+      routePath: "/api/admin/member",
+      mountPath: "/api/admin/member",
+      method: "POST",
+      middlewares: [],
+      modules: [__api_admin_member_index_ts_onRequestPost],
     },
   {
       routePath: "/api/admin/missing",
@@ -50,6 +75,13 @@ export const routes = [
       method: "GET",
       middlewares: [],
       modules: [__api_admin_submissions_ts_onRequestGet],
+    },
+  {
+      routePath: "/api/admin/member",
+      mountPath: "/api/admin/member",
+      method: "",
+      middlewares: [],
+      modules: [__api_admin_member_index_ts_onRequest],
     },
   {
       routePath: "/api/party/search",
