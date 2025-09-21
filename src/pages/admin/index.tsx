@@ -1,13 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { searchParties as apiSearchParties } from "../../api/rsvp";
 import { formatNYDateTime } from "../../lib/time";
-import {
-  listAdminPhotos,
-  approvePhoto,
-  rejectPhoto,
-  updateSettings as updateGallerySettings,
-  type AdminPhoto,
-} from "../../api/adminPhoto";
 
 
 /* =========================================================================
