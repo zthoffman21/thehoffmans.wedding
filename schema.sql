@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS photos (
 
 CREATE TABLE IF NOT EXISTS rate_log (
   id TEXT PRIMARY KEY,
-  bucket TEXT NOT NULL,                -- 'upload:<iphash>'
+  bucket TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_rate_bucket_time ON rate_log(bucket, created_at);
@@ -154,8 +154,8 @@ LEFT JOIN member_attendance_current a ON a.member_id = m.id;
 CREATE INDEX IF NOT EXISTS idx_members_party ON members(party_id);
 CREATE INDEX IF NOT EXISTS idx_members_sort ON members(party_id, sort_order, full_name);
 CREATE INDEX IF NOT EXISTS idx_attendance_member ON member_attendance_current(member_id);
-CREATE INDEX IF NOT EXISTS idx_rate_log ON rate_log(ip, route, ts);
+
+CREATE INDEX IF NOT EXISTS idx_rate_bucket_time ON rate_log(bucket, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON rsvp_submissions(submitted_at);
 CREATE INDEX IF NOT EXISTS idx_submissions_party ON rsvp_submissions(party_id);
-CREATE INDEX IF NOT EXISTS idx_members_party ON members(party_id);

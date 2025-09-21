@@ -7,6 +7,7 @@ import Info from "./pages/Info";
 import Invite from "./pages/Invite";
 import Guide from "./pages/Guide";
 import AdminDashboard from "./pages/admin";
+import GalleryUpload from "./pages/GalleryUpload";
 
 export default function App() {
     const location = useLocation();
@@ -26,6 +27,7 @@ export default function App() {
                     <Route path="/" element={<Landing />} />
                     <Route path="/rsvp" element={<RSVP />} />
                     <Route path="/gallery" element={<Gallery />} />
+                    <Route path="/gallery/upload" element={<GalleryUpload />} />
                     <Route path="/info" element={<Info />} />
                     <Route path="/guide" element={<Guide />} />
 

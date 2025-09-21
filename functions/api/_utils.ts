@@ -1,12 +1,16 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { z } from "zod";
+import { string, z } from "zod";
 
 export type Env = {
   DB: D1Database;
   NOTIFY_EMAIL_TO?: string; 
   NOTIFY_FROM?: string;
   ADMIN_TOKEN?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_ACCOUNT_ID?: string;
+  R2_BUCKET?: string;
 };
 
 export const RSVPSubmissionSchema = z.object({

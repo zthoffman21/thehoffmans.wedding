@@ -54,7 +54,7 @@ export default function Gallery() {
     <section className="container-px py-8">
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Shared Album</h1>
-        <a href="/gallery/upload" className="rounded-xl px-3 py-2 bg-ink/90 text-white">Add photos</a>
+        <a href="/gallery/upload" className="rounded-xl px-3 py-2 bg-ink/90 text-ink">Add photos</a>
       </header>
 
       <Masonry>
