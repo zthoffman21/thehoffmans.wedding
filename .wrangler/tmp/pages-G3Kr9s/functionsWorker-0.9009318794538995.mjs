@@ -42413,39 +42413,37 @@ var init_direct_upload = __esm({
     init_dist_es58();
     onRequestPost4 = /* @__PURE__ */ __name(async ({ env, request }) => {
       try {
-        const { files } = await request.json();
+        const payload = await request.json().catch(() => ({}));
+        const files = Math.max(1, Math.min(10, Number(payload.files ?? 1)));
         const accountId = env.R2_ACCOUNT_ID;
         const bucket = env.R2_BUCKET;
         const accessKeyId = env.R2_ACCESS_KEY_ID;
         const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
         if (!accountId || !bucket || !accessKeyId || !secretAccessKey) {
-          throw new Error("Missing R2 env: R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY");
+          return new Response(
+            JSON.stringify({ ok: false, message: "Missing env: R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY" }),
+            { status: 500, headers: { "content-type": "application/json" } }
+          );
         }
         const s3 = new S3Client({
           region: "auto",
           endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
           credentials: { accessKeyId, secretAccessKey },
-          // now definitely strings
           forcePathStyle: true
-          // required for R2
         });
         const items = [];
         for (let i2 = 0; i2 < files; i2++) {
           const key = `uploads/${crypto.randomUUID()}`;
-          const cmd = new PutObjectCommand({
-            Bucket: bucket,
-            // <-- this fixes "No value for HTTP label: Bucket"
-            Key: key,
-            ContentType: "application/octet-stream"
-          });
+          const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: "application/octet-stream" });
           const uploadURL = await getSignedUrl(s3, cmd, { expiresIn: 900 });
           items.push({ key, uploadURL });
         }
-        return new Response(JSON.stringify({ ok: true, items }), {
+        return new Response(JSON.stringify({ ok: true, items }), { headers: { "content-type": "application/json" } });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, message: String(err?.message || err) }), {
+          status: 500,
           headers: { "content-type": "application/json" }
         });
-      } catch (err) {
-        return new Response(JSON.stringify({ ok: false, message: String(err?.message || err) }), { status: 500 });
       }
     }, "onRequestPost");
   }
@@ -42747,10 +42745,10 @@ var init_functionsRoutes_0_9425322643312006 = __esm({
   }
 });
 
-// ../.wrangler/tmp/bundle-5OUgSo/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-Ezbj48/middleware-loader.entry.ts
 init_functionsRoutes_0_9425322643312006();
 
-// ../.wrangler/tmp/bundle-5OUgSo/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-Ezbj48/middleware-insertion-facade.js
 init_functionsRoutes_0_9425322643312006();
 
 // ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
@@ -43246,7 +43244,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-5OUgSo/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-Ezbj48/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -43279,7 +43277,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-5OUgSo/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-Ezbj48/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

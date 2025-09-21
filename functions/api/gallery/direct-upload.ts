@@ -1,11 +1,14 @@
-// /functions/api/gallery/direct-upload.ts
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Env } from "../_utils";
 
+type UploadReq = { files?: number };
+
 export const onRequestPost: PagesFunction<Env> = async ({ env, request }) => {
   try {
-  const { files } = await request.json<{ files: number }>();
+    // Safely parse and narrow
+    const payload = (await request.json().catch(() => ({}))) as UploadReq;
+    const files = Math.max(1, Math.min(10, Number(payload.files ?? 1)));
 
     const accountId = env.R2_ACCOUNT_ID;
     const bucket = env.R2_BUCKET;
@@ -13,34 +16,32 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, request }) => {
     const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
 
     if (!accountId || !bucket || !accessKeyId || !secretAccessKey) {
-      throw new Error("Missing R2 env: R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY");
+      return new Response(
+        JSON.stringify({ ok: false, message: "Missing env: R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY" }),
+        { status: 500, headers: { "content-type": "application/json" } }
+      );
     }
 
-    // 2) Create S3 client (OBJECT, not array)
     const s3 = new S3Client({
       region: "auto",
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey }, // now definitely strings
-      forcePathStyle: true, // required for R2
+      credentials: { accessKeyId, secretAccessKey },
+      forcePathStyle: true,
     });
 
-    // 3) Generate N presigned PUT URLs
     const items: Array<{ key: string; uploadURL: string }> = [];
     for (let i = 0; i < files; i++) {
-      const key = `uploads/${crypto.randomUUID()}`; // add file extension on client if you want
-      const cmd = new PutObjectCommand({
-        Bucket: bucket,         // <-- this fixes "No value for HTTP label: Bucket"
-        Key: key,
-        ContentType: "application/octet-stream",
-      });
+      const key = `uploads/${crypto.randomUUID()}`;
+      const cmd = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: "application/octet-stream" });
       const uploadURL = await getSignedUrl(s3, cmd, { expiresIn: 900 });
       items.push({ key, uploadURL });
     }
 
-    return new Response(JSON.stringify({ ok: true, items }), {
+    return new Response(JSON.stringify({ ok: true, items }), { headers: { "content-type": "application/json" } });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ ok: false, message: String(err?.message || err) }), {
+      status: 500,
       headers: { "content-type": "application/json" },
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ ok: false, message: String(err?.message || err) }), { status: 500 });
   }
 };
