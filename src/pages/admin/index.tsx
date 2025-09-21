@@ -839,9 +839,7 @@ function GalleryTab() {
 
                 <p className="sm:col-span-3 text-xs text-ink/60">
                     When auto-publish is off, new photos are saved as <em>pending</em> and hidden
-                    until approved via this queue (driven by <code>photos.status</code> /{" "}
-                    <code>photos.is_public</code> and the
-                    <code>settings</code> table). :contentReference[oaicite:2]
+                    until approved via this queue.
                 </p>
             </div>
 
@@ -923,7 +921,6 @@ function GalleryTab() {
             <p className="mt-8 text-xs text-ink/60">
                 The public gallery endpoint only returns <code>status='approved'</code> with{" "}
                 <code>is_public=1</code>, so pending items never appear until approved.
-                :contentReference[oaicite:3]
             </p>
         </div>
     );
