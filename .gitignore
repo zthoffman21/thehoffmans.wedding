@@ -27,3 +27,5 @@ seed.sql
 *.njsproj
 *.sln
 *.sw?
+
+.env

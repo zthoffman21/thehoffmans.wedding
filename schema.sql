@@ -56,18 +56,54 @@ CREATE TABLE IF NOT EXISTS idempotency (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS rate_log (
-  ip TEXT,
-  route TEXT,
-  ts INTEGER
-);
-
 CREATE VIRTUAL TABLE IF NOT EXISTS party_fts USING fts5(
   party_id UNINDEXED,
   display_name,
   members,
   tokenize = 'unicode61'
 );
+
+
+
+CREATE TABLE IF NOT EXISTS albums (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  is_public INTEGER NOT NULL DEFAULT 1,
+  cover_photo_id TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+INSERT OR IGNORE INTO albums(id,slug,title,is_public) VALUES('album_default','shared','Shared Album',1);
+
+CREATE TABLE IF NOT EXISTS photos (
+  id TEXT PRIMARY KEY,
+  album_id TEXT REFERENCES albums(id) ON DELETE SET NULL DEFAULT 'album_default',
+  caption TEXT,
+  display_name TEXT,
+  width INTEGER, height INTEGER,
+  taken_at DATETIME,
+  status TEXT NOT NULL DEFAULT 'approved',
+  is_public INTEGER NOT NULL DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS rate_log (
+  id TEXT PRIMARY KEY,
+  bucket TEXT NOT NULL,                -- 'upload:<iphash>'
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_rate_bucket_time ON rate_log(bucket, created_at);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+INSERT OR IGNORE INTO settings(key, value) VALUES
+  ('auto_publish_uploads','0'),
+  ('upload_rate_per_hour','20');
+
+
 
 CREATE TRIGGER IF NOT EXISTS party_fts_insert AFTER INSERT ON parties BEGIN
   INSERT INTO party_fts (party_id, display_name, members)

@@ -352,7 +352,7 @@ function Manage() {
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Enter party or member name…"
+                        placeholder="Enter party name…"
                         className="w-full rounded-xl border border-ink/15 bg-[#FAF7EC] px-4 py-3 text-ink shadow-inner outline-none ring-accent/30 focus:border-accent/50 focus:ring"
                         aria-label="Search name"
                     />

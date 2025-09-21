@@ -13,6 +13,8 @@
     "d1:local:setup": "wrangler d1 execute wedding_rsvp --local --file=schema.sql && wrangler d1 execute wedding_rsvp --local --file=seed.sql"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.893.0",
+    "@aws-sdk/s3-request-presigner": "^3.893.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
@@ -21,10 +23,11 @@
     "zod": "^4.1.9"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250918.0",
+    "@cloudflare/workers-types": "^4.20250921.0",
     "@eslint/js": "^9.33.0",
     "@tailwindcss/cli": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^24.5.2",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
