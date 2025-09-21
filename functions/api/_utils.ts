@@ -3,14 +3,14 @@
 import { string, z } from "zod";
 
 export type Env = {
+  R2: R2Bucket;
   DB: D1Database;
-  NOTIFY_EMAIL_TO?: string; 
-  NOTIFY_FROM?: string;
-  ADMIN_TOKEN?: string;
-  R2_ACCESS_KEY_ID?: string;
-  R2_SECRET_ACCESS_KEY?: string;
-  R2_ACCOUNT_ID?: string;
-  R2_BUCKET?: string;
+
+  R2_ACCOUNT_ID: string;
+  R2_BUCKET: string;
+
+  R2_ACCESS_KEY_ID: string;
+  R2_SECRET_ACCESS_KEY: string;
   TURNSTILE_SECRET?: string;
 };
 
@@ -40,20 +40,6 @@ export function json(data: unknown, init?: number | ResponseInit) {
 
 export function newId(prefix = "id") {
   return `${prefix}_${crypto.randomUUID()}`;
-}
-
-export async function notifyEmail(env: Env, subject: string, text: string) {
-  if (!env.NOTIFY_EMAIL_TO || !env.NOTIFY_FROM) return;
-  await fetch("https://api.mailchannels.net/tx/v1/send", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: env.NOTIFY_EMAIL_TO }] }],
-      from: { email: env.NOTIFY_FROM, name: "Wedding RSVP Bot" },
-      subject,
-      content: [{ type: "text/plain", value: text }],
-    }),
-  });
 }
 
 export async function sha256(

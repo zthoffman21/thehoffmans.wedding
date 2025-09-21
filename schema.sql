@@ -159,3 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_rate_bucket_time ON rate_log(bucket, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON rsvp_submissions(submitted_at);
 CREATE INDEX IF NOT EXISTS idx_submissions_party ON rsvp_submissions(party_id);
+
+CREATE INDEX IF NOT EXISTS idx_photos_public ON photos (is_public, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_photos_status ON photos (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_photos_approved ON photos (created_at DESC) WHERE status = 'approved' AND is_public = 1;

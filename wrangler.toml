@@ -1,17 +1,10 @@
-# wrangler.toml (used by Pages on deploy)
+# wrangler.toml
 name = "thehoffmans-wedding"
 compatibility_date = "2025-09-15"
 pages_build_output_dir = "dist"
 
-# --- Production binding for Pages ---
+# --- Bindings ---
 [[d1_databases]]
-binding = "DB"
-database_name = "wedding_rsvp"
-database_id = "b5254ca7-205c-46e1-b96f-1275987fb241"
-
-# --- Preview binding for Pages ---
-[env.preview]
-[[env.preview.d1_databases]]
 binding = "DB"
 database_name = "wedding_rsvp"
 database_id = "b5254ca7-205c-46e1-b96f-1275987fb241"
@@ -19,6 +12,17 @@ database_id = "b5254ca7-205c-46e1-b96f-1275987fb241"
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "wedding-photos"
+
+[vars]
+R2_ACCOUNT_ID = "c6fe53e49dbf0c67ee5fe60c2c01b001"
+R2_BUCKET     = "wedding-photos"
+VITE_TURNSTILE_SITE_KEY = "0x4AAAAAAB2ZTZXxGYIbAmbl"
+VITE_IMG_PUBLIC_ORIGIN = "https://images.thehoffmans.wedding"
+
+# Preview overrides if needed
+[env.preview.vars]
+R2_ACCOUNT_ID = "c6fe53e49dbf0c67ee5fe60c2c01b001"
+R2_BUCKET     = "wedding-photos"
 
 [dev]
 port = 8787

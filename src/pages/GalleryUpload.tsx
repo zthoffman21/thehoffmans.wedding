@@ -46,6 +46,16 @@ export default function GalleryUpload() {
                 return;
             }
             try {
+                if (tsIdRef.current) {
+                    try {
+                        window.turnstile.remove(tsIdRef.current);
+                    } catch {}
+                    tsIdRef.current = null;
+                }
+                if (tsElRef.current && tsElRef.current.firstChild) {
+                    tsElRef.current.innerHTML = ""; // ensure empty container
+                }
+
                 tsIdRef.current = window.turnstile.render(tsElRef.current!, {
                     sitekey: SITE_KEY,
                     size: "invisible",
