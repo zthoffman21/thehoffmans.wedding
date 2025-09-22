@@ -86,18 +86,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     .replace(/-+/g, "-")
                     .replace(/^-|-$/g, "") || "photo") + ext;
             const utf8Star = "UTF-8''" + encodeURIComponent(base + ext).replace(/%20/g, "+");
-            const rawBase =
-                p.download_name || decodeURIComponent(key.split("/").pop() || "photo.jpg");
-            const dot = rawBase.lastIndexOf(".");
-            const base = dot > 0 ? rawBase.slice(0, dot) : rawBase;
-            const ext = dot > 0 ? rawBase.slice(dot) : ".jpg";
-
-            const safeAscii =
-                (base
-                    .replace(/[^\w.\-]+/g, "-")
-                    .replace(/-+/g, "-")
-                    .replace(/^-|-$/g, "") || "photo") + ext;
-            const utf8Star = "UTF-8''" + encodeURIComponent(base + ext).replace(/%20/g, "+");
 
             // Choose a proper image Content-Type
             const desiredContentType =
@@ -110,7 +98,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     ? "image/gif"
                     : "image/jpeg");
 
-            // IMPORTANT: inline instead of attachment so iOS shows it, not downloads to Files
             const desired = {
                 contentType: desiredContentType,
                 contentDisposition: `inline; filename="${safeAscii}"; filename*=${utf8Star}`,
