@@ -789,6 +789,8 @@ function GalleryTab() {
     const [saving, setSaving] = useState(false);
     const [purgeRejected, setPurgeRejected] = useState(true);
 
+    const [preview, setPreview] = useState<AdminPhoto | null>(null);
+
     async function refreshPending() {
         const res = await listAdminPhotos("pending", 200);
         setQueue(res.items || []);
@@ -819,6 +821,14 @@ function GalleryTab() {
                 setPurgeRejected(!!s.purge_rejected_uploads);
             })
             .catch((e) => console.error("Failed to load settings", e));
+    }, []);
+
+    useEffect(() => {
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") setPreview(null);
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
     }, []);
 
     // load both lists once on mount so tab switch is instant
@@ -1069,9 +1079,7 @@ function GalleryTab() {
                                         <div className="inline-flex gap-2">
                                             <button
                                                 className="rounded-lg border px-3 py-1"
-                                                onClick={() =>
-                                                    window.open(cfImg(p.id, 1400, 80), "_blank")
-                                                }
+                                                onClick={() => setPreview(p)}
                                             >
                                                 View
                                             </button>
@@ -1095,6 +1103,81 @@ function GalleryTab() {
                 The public gallery endpoint only returns <code>status='approved'</code> with{" "}
                 <code>is_public=1</code>, so pending items never appear until approved.
             </p>
+
+            {/* Image preview modal */}
+            {preview && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+                    onClick={() => setPreview(null)}
+                >
+                    <div
+                        className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-[#FAF7EC] shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between gap-3 border-b px-4 py-2">
+                            <div className="min-w-0">
+                                <div className="truncate font-medium">
+                                    {preview.caption || "Photo"}
+                                </div>
+                                <div className="truncate text-xs text-ink/60">
+                                    {preview.display_name ? `${preview.display_name} • ` : ""}
+                                    {formatNYDateTime(preview.created_at)}
+                                </div>
+                            </div>
+                            <button
+                                className="rounded-lg border px-3 py-1"
+                                onClick={() => setPreview(null)}
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        {/* Image */}
+                        <div className="max-h-[80vh] overflow-auto bg-neutral-100">
+                            <img
+                                src={cfImg(preview.id, 1600, 85)}
+                                srcSet={`
+            ${cfImg(preview.id, 800, 80)} 800w,
+            ${cfImg(preview.id, 1200, 85)} 1200w,
+            ${cfImg(preview.id, 2000, 85)} 2000w
+          `}
+                                sizes="(max-width: 640px) 95vw, 80vw"
+                                alt={preview.caption || "Photo"}
+                                className="mx-auto block h-auto w-full max-w-none"
+                                style={
+                                    preview.width && preview.height
+                                        ? { aspectRatio: `${preview.width} / ${preview.height}` }
+                                        : undefined
+                                }
+                            />
+                        </div>
+
+                        {/* Footer actions */}
+                        <div className="flex items-center justify-end gap-2 border-t px-4 py-2">
+                            <a
+                                className="rounded-lg border px-3 py-1"
+                                href={cfImg(preview.id, 2000, 90)}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Open in new tab
+                            </a>
+                            <button
+                                className="rounded-lg border px-3 py-1 bg-[#ffe6e6]"
+                                onClick={() => {
+                                    setPreview(null);
+                                    onDelete(preview.id);
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -1152,45 +1235,5 @@ function SelectYN({
             <option value="1">Yes</option>
             <option value="0">No</option>
         </select>
-    );
-}
-
-/** Reusable row: label + (optional) description + control */
-function SettingRow({
-    label,
-    desc,
-    control,
-    alignTop = false,
-}: {
-    label: string;
-    desc?: string;
-    control: React.ReactNode;
-    alignTop?: boolean;
-}) {
-    return (
-        <div className="grid gap-3 sm:grid-cols-[1fr,2fr] items-center py-3">
-            <div className={alignTop ? "self-start" : ""}>
-                <div className="font-medium text-ink">{label}</div>
-                {desc && <div className="text-xs text-ink/60 mt-0.5">{desc}</div>}
-            </div>
-            <div className={alignTop ? "self-start" : ""}>{control}</div>
-        </div>
-    );
-}
-
-/** A subtle switch look (keeps your checkbox semantics) */
-function Switch({ checked, onChange }: { checked: boolean; onChange: (b: boolean) => void }) {
-    return (
-        <label className="inline-flex items-center cursor-pointer select-none">
-            <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={checked}
-                onChange={(e) => onChange(e.target.checked)}
-            />
-            <span className="relative inline-block h-6 w-10 rounded-full bg-ink/20 transition peer-checked:bg-ink">
-                <span className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[#FAF7EC] shadow transition-transform peer-checked:translate-x-4" />
-            </span>
-        </label>
     );
 }
