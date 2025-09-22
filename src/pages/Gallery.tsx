@@ -161,7 +161,7 @@ export default function Gallery() {
         <section
             className="container-px pb-12 pt-4 text-[#FAF7EC]"
             style={{
-                background: "#203648",
+                background: "#243542",
                 minHeight: "100dvh",
             }}
         >
@@ -170,6 +170,12 @@ export default function Gallery() {
                 className="sticky top-0 z-30 -mx-[var(--container-px,0)] mb-4
              relative bg-transparent px-[var(--container-px,1rem)] py-3 backdrop-blur"
             >
+                <div className="mx-auto flex max-w-5xl flex-col items-center px-4 pt-20 text-center text-[#F2EFE7]">
+                    <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Photo Gallery</h1>
+                    <p className="mt-4 max-w-2xl text-base/7 opacity-95">
+                        A shared photo album that allows everyone to share their favorite memories of the day from their point of view.
+                    </p>
+                </div>
                 <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
                     <span className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10">
                         Shared Album
