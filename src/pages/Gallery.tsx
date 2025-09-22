@@ -167,30 +167,31 @@ export default function Gallery() {
         >
             {/* Sticky header */}
             <header
-                className="sticky top-0 z-30 -mx-[var(--container-px,0)] mb-4
-             relative bg-transparent px-[var(--container-px,1rem)] py-3 backdrop-blur"
+                className="sticky top-0 z-30 -mx-[var(--container-px,0)] mb-8
+             bg-transparent px-[var(--container-px,1rem)] py-6 backdrop-blur"
             >
-                <div className="mx-auto flex max-w-5xl flex-col items-center px-4 pt-20 text-center text-[#F2EFE7]">
-                    <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Photo Gallery</h1>
-                    <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-                        A shared photo album that allows everyone to share their favorite memories of the day from their point of view.
+                <div className="mx-auto flex max-w-5xl flex-col items-center text-center text-[#F2EFE7]">
+                    <h1 className="text-4xl font-semibold sm:text-5xl">Photo Gallery</h1>
+                    <p className="mt-3 max-w-2xl text-base/7 opacity-95">
+                        A shared photo album that allows everyone to share their favorite memories
+                        of the day from their point of view.
                     </p>
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
-                    <span className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10">
-                        Shared Album
-                    </span>
 
-                    {/* Action-style, flipped colors */}
-                    <button
-                        onClick={() => setShowUpload(true)}
-                        className="rounded-lg bg-[#FAF7EC] px-3 py-1.5 font-medium text-[#203648] shadow-sm ring-1 ring-white/20 transition
-                       hover:bg-white/95 hover:shadow-md active:scale-[0.98]
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                        aria-label="Add photos"
-                    >
-                        + Add photos
-                    </button>
+                    <div className="mt-6 flex items-center gap-3 text-sm text-white/80">
+                        <span className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10">
+                            Shared Album
+                        </span>
+
+                        <button
+                            onClick={() => setShowUpload(true)}
+                            className="rounded-lg bg-[#FAF7EC] px-3 py-1.5 font-medium text-[#203648] shadow-sm ring-1 ring-white/20 transition
+                   hover:bg-white/95 hover:shadow-md active:scale-[0.98]
+                   focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                            aria-label="Add photos"
+                        >
+                            + Add photos
+                        </button>
+                    </div>
                 </div>
             </header>
 
