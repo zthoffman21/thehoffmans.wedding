@@ -32,33 +32,33 @@ const IS_IOS =
     typeof navigator !== "undefined" &&
     (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1));
-        
+
 function apiFileUrl(key: string, opts?: { disposition?: "inline" | "attachment"; name?: string }) {
-  const q = new URLSearchParams({ key });
-  if (opts?.disposition) q.set("disposition", opts.disposition);
-  if (opts?.name) q.set("name", opts.name);
-  return `/api/gallery/file?${q.toString()}`;
+    const q = new URLSearchParams({ key });
+    if (opts?.disposition) q.set("disposition", opts.disposition);
+    if (opts?.name) q.set("name", opts.name);
+    return `/api/gallery/file?${q.toString()}`;
 }
 
 async function handleSave(key: string) {
-  const name = filenameFromKey(key);
+    const name = filenameFromKey(key);
 
-  if (IS_IOS) {
-    // Best path to Photos: open the image inline so the user can long-press → "Save Image"
-    const viewUrl = apiFileUrl(key, { disposition: "inline", name });
-    window.open(viewUrl, "_blank", "noopener");
-    return;
-  }
+    if (IS_IOS) {
+        // Best path to Photos: open the image inline so the user can long-press → "Save Image"
+        const viewUrl = apiFileUrl(key, { disposition: "inline", name });
+        window.open(viewUrl, "_blank", "noopener");
+        return;
+    }
 
-  // Desktop: use attachment so it downloads with the right filename
-  const dlUrl = apiFileUrl(key, { disposition: "attachment", name });
-  // Either navigate or synthesize a click to honor filename
-  const a = document.createElement("a");
-  a.href = dlUrl;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+    // Desktop: use attachment so it downloads with the right filename
+    const dlUrl = apiFileUrl(key, { disposition: "attachment", name });
+    // Either navigate or synthesize a click to honor filename
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 }
 
 /* -------------------------------- Component ------------------------------- */
@@ -231,34 +231,44 @@ export default function Gallery() {
                                     </figcaption>
                                 )}
 
-                                {/* Download button */}
-                                <button
-                                    onClick={() => handleSave(p.key)}
-                                    title={IS_IOS ? "Share / Save" : "Download"}
-                                    aria-label={IS_IOS ? "Share or Save image" : "Download image"}
-                                    className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md
-             bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25
-             backdrop-blur transition hover:bg-black/70 focus:outline-none
-             focus-visible:ring-2 focus-visible:ring-white/50"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="size-3.5"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
+                                {/* Download / Save affordance */}
+                                {IS_IOS ? (
+                                    // iOS/iPadOS: show hint, no click action
+                                    <div
+                                        className="absolute bottom-2 right-2 rounded-md bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25 backdrop-blur"
+                                        role="note"
+                                        aria-label="Hold image to save to Photos"
                                     >
-                                        <path
-                                            d="M12 3v10m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    <span className="hidden sm:inline">
-                                        {IS_IOS ? "Share / Save" : "Download"}
-                                    </span>
-                                </button>
+                                        Hold image to save
+                                    </div>
+                                ) : (
+                                    // Desktop: keep real download
+                                    <button
+                                        onClick={() => handleSave(p.key)}
+                                        title="Download"
+                                        aria-label="Download image"
+                                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md
+               bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25
+               backdrop-blur transition hover:bg-black/70 focus:outline-none
+               focus-visible:ring-2 focus-visible:ring-white/50"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="size-3.5"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                        >
+                                            <path
+                                                d="M12 3v10m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                                                stroke="currentColor"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                        <span className="hidden sm:inline">Download</span>
+                                    </button>
+                                )}
                             </div>
                         </figure>
                     ))}
