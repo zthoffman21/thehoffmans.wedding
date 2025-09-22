@@ -86,18 +86,34 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     .replace(/-+/g, "-")
                     .replace(/^-|-$/g, "") || "photo") + ext;
             const utf8Star = "UTF-8''" + encodeURIComponent(base + ext).replace(/%20/g, "+");
+            const rawBase =
+                p.download_name || decodeURIComponent(key.split("/").pop() || "photo.jpg");
+            const dot = rawBase.lastIndexOf(".");
+            const base = dot > 0 ? rawBase.slice(0, dot) : rawBase;
+            const ext = dot > 0 ? rawBase.slice(dot) : ".jpg";
 
+            const safeAscii =
+                (base
+                    .replace(/[^\w.\-]+/g, "-")
+                    .replace(/-+/g, "-")
+                    .replace(/^-|-$/g, "") || "photo") + ext;
+            const utf8Star = "UTF-8''" + encodeURIComponent(base + ext).replace(/%20/g, "+");
+
+            // Choose a proper image Content-Type
+            const desiredContentType =
+                head.httpMetadata?.contentType ||
+                (/\.(png)$/i.test(ext)
+                    ? "image/png"
+                    : /\.(webp)$/i.test(ext)
+                    ? "image/webp"
+                    : /\.(gif)$/i.test(ext)
+                    ? "image/gif"
+                    : "image/jpeg");
+
+            // IMPORTANT: inline instead of attachment so iOS shows it, not downloads to Files
             const desired = {
-                contentType:
-                    head.httpMetadata?.contentType ||
-                    (/\.(png)$/i.test(ext)
-                        ? "image/png"
-                        : /\.(webp)$/i.test(ext)
-                        ? "image/webp"
-                        : /\.(gif)$/i.test(ext)
-                        ? "image/gif"
-                        : "image/jpeg"),
-                contentDisposition: `attachment; filename="${safeAscii}"; filename*=${utf8Star}`,
+                contentType: desiredContentType,
+                contentDisposition: `inline; filename="${safeAscii}"; filename*=${utf8Star}`,
                 cacheControl:
                     head.httpMetadata?.cacheControl || "public, max-age=31536000, immutable",
             };
@@ -112,6 +128,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                 current.contentType !== desired.contentType ||
                 current.contentDisposition !== desired.contentDisposition ||
                 current.cacheControl !== desired.cacheControl;
+
+            if (needsRewrite) {
+                const obj = await env.R2.get(key);
+                if (!obj || !obj.body) {
+                    return json(
+                        { ok: false, message: "Failed to read object body", key },
+                        { status: 500 }
+                    );
+                }
+                try {
+                    await env.R2.put(key, obj.body, {
+                        httpMetadata: desired,
+                        customMetadata: head.customMetadata,
+                    });
+                } catch (e) {
+                    console.warn("R2.put rewrite failed for", key, e);
+                    // non-fatal
+                }
+            }
 
             if (needsRewrite) {
                 // Stream the object and overwrite with new httpMetadata
