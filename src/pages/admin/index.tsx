@@ -127,6 +127,14 @@ async function updateGallerySettings(opts: {
     return asJson<{ ok: true; updated: Record<string, string> }>(res);
 }
 
+async function deletePhoto(id: string) {
+    const res = await fetch(`/api/admin/photos/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+    });
+    return asJson<{ ok: true }>(res);
+}
+
 /* =========================================================================
    Image URL helper for previews
    ========================================================================= */
@@ -760,7 +768,15 @@ function MemberRow({ m, onSaved }: { m: MemberDetail; onSaved: () => void }) {
    ========================================================================= */
 
 function GalleryTab() {
+    type Mode = "pending" | "posted";
+
+    const [mode, setMode] = useState<Mode>("pending");
+
+    // pending queue
     const [queue, setQueue] = useState<AdminPhoto[]>([]);
+    // posted list
+    const [posted, setPosted] = useState<AdminPhoto[]>([]);
+
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
@@ -770,12 +786,21 @@ function GalleryTab() {
     const [saving, setSaving] = useState(false);
     const [purgeRejected, setPurgeRejected] = useState(true);
 
-    async function refresh() {
+    async function refreshPending() {
+        const res = await listAdminPhotos("pending", 200);
+        setQueue(res.items || []);
+    }
+    async function refreshPosted() {
+        // server returns only approved/public items for 'approved'
+        const res = await listAdminPhotos("approved", 200);
+        setPosted(res.items || []);
+    }
+    async function refreshActive() {
+        setErr(null);
+        setLoading(true);
         try {
-            setLoading(true);
-            setErr(null);
-            const res = await listAdminPhotos("pending", 200);
-            setQueue(res.items || []);
+            if (mode === "pending") await refreshPending();
+            else await refreshPosted();
         } catch (e: any) {
             setErr(e?.message || String(e));
         } finally {
@@ -790,17 +815,31 @@ function GalleryTab() {
                 setRatePerHour(Number(s.upload_rate_per_hour || 20));
                 setPurgeRejected(!!s.purge_rejected_uploads);
             })
-            .catch((e) => {
-                console.error("Failed to load settings", e);
-            });
-
-        refresh();
+            .catch((e) => console.error("Failed to load settings", e));
     }, []);
 
+    // load both lists once on mount so tab switch is instant
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true);
+                await Promise.all([refreshPending(), refreshPosted()]);
+            } catch (e: any) {
+                setErr(e?.message || String(e));
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
+
+    // actions
     async function onApprove(id: string) {
         try {
             await approvePhoto(id);
+            // move from pending -> posted in UI
+            const item = queue.find((x) => x.id === id);
             setQueue((q) => q.filter((x) => x.id !== id));
+            if (item) setPosted((p) => [{ ...item }, ...p]);
         } catch (e: any) {
             alert(e?.message || "Approve failed");
         }
@@ -813,7 +852,15 @@ function GalleryTab() {
             alert(e?.message || "Reject failed");
         }
     }
-
+    async function onDelete(id: string) {
+        if (!confirm("Delete this posted image? This cannot be undone.")) return;
+        try {
+            await deletePhoto(id);
+            setPosted((p) => p.filter((x) => x.id !== id));
+        } catch (e: any) {
+            alert(e?.message || "Delete failed");
+        }
+    }
     async function onSaveSettings() {
         try {
             setSaving(true);
@@ -834,36 +881,34 @@ function GalleryTab() {
         <div className="space-y-6">
             {/* Settings card */}
             <div className="grid gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
-                <div>
-                    <label className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            className="size-4"
-                            checked={autoPublish}
-                            onChange={(e) => setAutoPublish(e.target.checked)}
-                        />
-                        <span className="text-sm">Auto-publish uploads (skip approval)</span>
-                    </label>
-                    <label className="flex items-center gap-3">
-                        <input
-                            type="checkbox"
-                            className="size-4"
-                            checked={purgeRejected}
-                            onChange={(e) => setPurgeRejected(e.target.checked)}
-                        />
-                        <span className="text-sm">Purge rejected uploads from R2</span>
-                    </label>
+                <label className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        className="size-4"
+                        checked={autoPublish}
+                        onChange={(e) => setAutoPublish(e.target.checked)}
+                    />
+                    <span className="text-sm">Auto-publish uploads (skip approval)</span>
+                </label>
+                <label className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        className="size-4"
+                        checked={purgeRejected}
+                        onChange={(e) => setPurgeRejected(e.target.checked)}
+                    />
+                    <span className="text-sm">Purge rejected uploads from R2</span>
+                </label>
 
-                    <div className="flex items-center gap-3">
-                        <label className="text-sm">Upload rate / hour</label>
-                        <input
-                            type="number"
-                            className="w-28 rounded border p-1"
-                            value={ratePerHour}
-                            min={1}
-                            onChange={(e) => setRatePerHour(Number(e.target.value))}
-                        />
-                    </div>
+                <div className="flex items-center gap-3">
+                    <label className="text-sm">Upload rate / hour</label>
+                    <input
+                        type="number"
+                        className="w-28 rounded border p-1"
+                        value={ratePerHour}
+                        min={1}
+                        onChange={(e) => setRatePerHour(Number(e.target.value))}
+                    />
                 </div>
 
                 <div className="flex items-center sm:justify-end">
@@ -882,11 +927,29 @@ function GalleryTab() {
                 </p>
             </div>
 
-            {/* Queue */}
-            <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Pending queue</h2>
+            {/* Mode switcher */}
+            <div className="flex items-center justify-between">
+                <div className="inline-flex rounded-xl border overflow-hidden">
+                    <button
+                        className={`px-3 py-1 text-sm ${
+                            mode === "pending" ? "bg-ink text-[#FAF7EC]" : "bg-[#FAF7EC]"
+                        }`}
+                        onClick={() => setMode("pending")}
+                    >
+                        Pending ({queue.length})
+                    </button>
+                    <button
+                        className={`px-3 py-1 text-sm border-l ${
+                            mode === "posted" ? "bg-ink text-[#FAF7EC]" : "bg-[#FAF7EC]"
+                        }`}
+                        onClick={() => setMode("posted")}
+                    >
+                        Posted ({posted.length})
+                    </button>
+                </div>
+
                 <button
-                    onClick={refresh}
+                    onClick={refreshActive}
                     className="rounded-lg border px-3 py-1 text-sm"
                     title="Refresh"
                 >
@@ -900,61 +963,116 @@ function GalleryTab() {
                 </div>
             )}
 
+            {/* Views */}
             {loading ? (
                 <p>Loading…</p>
-            ) : queue.length === 0 ? (
-                <p className="text-ink/60">No pending uploads.</p>
+            ) : mode === "pending" ? (
+                queue.length === 0 ? (
+                    <p className="text-ink/60">No pending uploads.</p>
+                ) : (
+                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {queue.map((p) => (
+                            <li key={p.id} className="rounded-2xl border bg-white p-3">
+                                <figure className="mb-2">
+                                    <img
+                                        className="w-full rounded-xl bg-neutral-200 object-cover"
+                                        src={cfImg(p.id, 900)}
+                                        srcSet={`
+                      ${cfImg(p.id, 480, 70)} 480w,
+                      ${cfImg(p.id, 900, 75)} 900w,
+                      ${cfImg(p.id, 1400, 75)} 1400w
+                    `}
+                                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+                                        alt={p.caption || "Pending photo"}
+                                        style={
+                                            p.width && p.height
+                                                ? { aspectRatio: `${p.width} / ${p.height}` }
+                                                : undefined
+                                        }
+                                        loading="lazy"
+                                    />
+                                    {(p.caption || p.display_name) && (
+                                        <figcaption className="mt-1 text-xs text-ink/70">
+                                            {p.caption}{" "}
+                                            {p.display_name ? `— ${p.display_name}` : ""}
+                                        </figcaption>
+                                    )}
+                                </figure>
+
+                                <div className="flex items-center justify-between">
+                                    <button
+                                        onClick={() => onReject(p.id)}
+                                        className="rounded-lg border px-3 py-1 text-sm"
+                                    >
+                                        Reject
+                                    </button>
+                                    <button
+                                        onClick={() => onApprove(p.id)}
+                                        className="rounded-lg bg-ink/90 px-3 py-1 text-sm text-ink"
+                                    >
+                                        Approve
+                                    </button>
+                                </div>
+
+                                <p className="mt-2 text-[11px] text-ink/50">
+                                    Uploaded: {formatNYDateTime(p.created_at)}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                )
+            ) : posted.length === 0 ? (
+                <p className="text-ink/60">No posted images yet.</p>
             ) : (
-                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {queue.map((p) => (
-                        <li key={p.id} className="rounded-2xl border bg-white p-3">
-                            <figure className="mb-2">
-                                <img
-                                    className="w-full rounded-xl bg-neutral-200 object-cover"
-                                    src={cfImg(p.id, 900)}
-                                    srcSet={`
-                    ${cfImg(p.id, 480, 70)} 480w,
-                    ${cfImg(p.id, 900, 75)} 900w,
-                    ${cfImg(p.id, 1400, 75)} 1400w
-                  `}
-                                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-                                    alt={p.caption || "Pending photo"}
-                                    style={
-                                        p.width && p.height
-                                            ? { aspectRatio: `${p.width} / ${p.height}` }
-                                            : undefined
-                                    }
-                                    loading="lazy"
-                                />
-                                {(p.caption || p.display_name) && (
-                                    <figcaption className="mt-1 text-xs text-ink/70">
-                                        {p.caption} {p.display_name ? `— ${p.display_name}` : ""}
-                                    </figcaption>
-                                )}
-                            </figure>
-
-                            <div className="flex items-center justify-between">
-                                <button
-                                    onClick={() => onReject(p.id)}
-                                    className="rounded-lg border px-3 py-1 text-sm"
-                                >
-                                    Reject
-                                </button>
-                                <button
-                                    onClick={() => onApprove(p.id)}
-                                    className="rounded-lg bg-ink/90 px-3 py-1 text-sm text-white"
-                                >
-                                    Approve
-                                </button>
-                            </div>
-
-                            <p className="mt-2 text-[11px] text-ink/50">
-                                Uploaded:{" "}
-                                {new Date(p.created_at.replace(" ", "T") + "Z").toLocaleString()}
-                            </p>
-                        </li>
-                    ))}
-                </ul>
+                <div className="overflow-auto rounded-lg border bg-[#FAF7EC]">
+                    <table className="min-w-[720px] w-full text-sm">
+                        <thead className="bg-[#d6d4ca] text-ink/80">
+                            <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
+                                <th>Posted</th>
+                                <th>By</th>
+                                <th>Caption</th>
+                                <th className="w-[180px] text-right pr-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="[&>tr>td]:px-3 [&>tr>td]:py-2 divide-y">
+                            {posted.map((p) => (
+                                <tr key={p.id}>
+                                    <td className="whitespace-nowrap">
+                                        {formatNYDateTime(p.created_at)}
+                                    </td>
+                                    <td
+                                        className="max-w-[220px] truncate"
+                                        title={p.display_name ?? ""}
+                                    >
+                                        {p.display_name || "—"}
+                                    </td>
+                                    <td className="max-w-[360px] truncate" title={p.caption ?? ""}>
+                                        {p.caption || "—"}
+                                    </td>
+                                    <td className="text-right">
+                                        <div className="inline-flex gap-2">
+                                            <button
+                                                className="rounded-lg border px-3 py-1"
+                                                onClick={() =>
+                                                    window.open(cfImg(p.id, 1400, 80), "_blank")
+                                                }
+                                            >
+                                                View
+                                            </button>
+                                            <button
+                                                className="rounded-lg border px-3 py-1 bg-[#ffe6e6]"
+                                                onClick={() => onDelete(p.id)}
+                                                title="Delete image"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             )}
 
             <p className="mt-8 text-xs text-ink/60">
