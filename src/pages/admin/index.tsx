@@ -893,9 +893,9 @@ function GalleryTab() {
     return (
         <div className="space-y-6">
             {/* Settings card */}
-            <div className="grid gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+            <div className="gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
                 {/* Settings card */}
-                <div className="w-max rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
                     <div className="grid gap-4 sm:grid-cols-[1fr_auto] items-start">
                         {/* Left: settings */}
                         <div className="space-y-3">
