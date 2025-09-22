@@ -17,9 +17,8 @@ function cfImg(key: string, w: number, q = 75) {
     return `/cdn-cgi/image/width=${w},quality=${q},format=auto/${IMG_ORIGIN}/${encodeURI(key)}`;
 }
 function rawImgUrl(key: string) {
-    return `/${IMG_ORIGIN}/${encodeURI(key)}`;
+    return `/${IMG_ORIGIN}/${encodeURI(key)}`; // full-res, no cf-image transform
 }
-
 function filenameFromKey(key: string) {
     try {
         return decodeURI(key.split("/").pop() || "photo.jpg");
@@ -28,55 +27,55 @@ function filenameFromKey(key: string) {
     }
 }
 
-// Basic iOS detection to pick friendliest UX
+// TS-safe iOS / iPadOS detection
 const IS_IOS =
-  typeof navigator !== "undefined" &&
-  (
-    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1) 
-  );
+    typeof navigator !== "undefined" &&
+    (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1));
 
-// Unified save handler: Share on iOS, download elsewhere, open-tab fallback
+// Unified save: iOS → Share sheet; non-iOS → download; fallback → open
 async function handleSave(key: string) {
     const url = rawImgUrl(key);
     const name = filenameFromKey(key);
+    const navAny = navigator as any;
 
-    try {
-        // Try Web Share with a File (best iOS UX if supported)
-        if (navigator.share && (navigator as any).canShare) {
-            const resp = await fetch(url, { mode: "cors" });
-            const blob = await resp.blob();
-            const file = new File([blob], name, { type: blob.type || "image/jpeg" });
-            if ((navigator as any).canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: "Save photo" });
-                return;
-            }
-        }
-    } catch {
-        // ignore and try next fallback
-    }
-
-    if (!IS_IOS) {
-        // Non-iOS: trigger a download programmatically
+    if (IS_IOS) {
         try {
-            const resp = await fetch(url, { mode: "cors" });
-            const blob = await resp.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = blobUrl;
-            a.download = name;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-            return;
+            // Best iOS UX: Share sheet with file (lets user choose "Save Image")
+            if (navAny?.share) {
+                const resp = await fetch(url, { mode: "cors" });
+                const blob = await resp.blob();
+                const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+                if (!navAny.canShare || navAny.canShare({ files: [file] })) {
+                    await navAny.share({ files: [file], title: "Save photo" });
+                    return;
+                }
+            }
         } catch {
-            // fall through to open
+            // fall through to open below
         }
+        // Fallback for older iOS: open image for long-press → “Save Image”
+        window.open(url, "_blank", "noopener");
+        return;
     }
 
-    // Last resort (especially iOS older versions): open full image to long-press save
-    window.open(url, "_blank", "noopener");
+    // Non-iOS: force a download with the friendly name
+    try {
+        const resp = await fetch(url, { mode: "cors" });
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = name; // browsers will use this; your R2 headers also help
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        return;
+    } catch {
+        // Final fallback
+        window.open(url, "_blank", "noopener");
+    }
 }
 
 /* -------------------------------- Component ------------------------------- */
@@ -252,8 +251,8 @@ export default function Gallery() {
                                 {/* Download button */}
                                 <button
                                     onClick={() => handleSave(p.key)}
-                                    title="Save"
-                                    aria-label="Save image"
+                                    title={IS_IOS ? "Share / Save" : "Download"}
+                                    aria-label={IS_IOS ? "Share or Save image" : "Download image"}
                                     className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md
              bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25
              backdrop-blur transition hover:bg-black/70 focus:outline-none
@@ -273,7 +272,9 @@ export default function Gallery() {
                                             strokeLinejoin="round"
                                         />
                                     </svg>
-                                    <span className="hidden sm:inline">Save</span>
+                                    <span className="hidden sm:inline">
+                                        {IS_IOS ? "Share / Save" : "Download"}
+                                    </span>
                                 </button>
                             </div>
                         </figure>
