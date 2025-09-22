@@ -173,7 +173,10 @@ export default function AdminDashboard() {
             <section className="relative z-20 mx-auto max-w-6xl p-6 text-ink">
                 <h1 className="mb-6 text-3xl font-semibold">Admin Dashboard</h1>
 
-                <nav className="mb-6 flex gap-2">
+                <nav
+                    className="mb-6 flex gap-2 overflow-x-auto whitespace-nowrap -mx-4 px-4
+             [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
                     {["overview", "submissions", "missing", "manage", "gallery"].map((t) => (
                         <button
                             key={t}
@@ -881,50 +884,63 @@ function GalleryTab() {
         <div className="space-y-6">
             {/* Settings card */}
             <div className="grid gap-4 sm:grid-cols-3 rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
-                <label className="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        className="size-4"
-                        checked={autoPublish}
-                        onChange={(e) => setAutoPublish(e.target.checked)}
-                    />
-                    <span className="text-sm">Auto-publish uploads (skip approval)</span>
-                </label>
-                <label className="flex items-center gap-3">
-                    <input
-                        type="checkbox"
-                        className="size-4"
-                        checked={purgeRejected}
-                        onChange={(e) => setPurgeRejected(e.target.checked)}
-                    />
-                    <span className="text-sm">Purge rejected uploads from R2</span>
-                </label>
+                {/* Settings card */}
+                <div className="w-max rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                    <div className="grid gap-4 sm:grid-cols-[1fr_auto] items-start">
+                        {/* Left: settings */}
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={autoPublish}
+                                    onChange={(e) => setAutoPublish(e.target.checked)}
+                                />
+                                <span className="text-sm">
+                                    Auto-publish uploads (skip approval)
+                                </span>
+                            </label>
 
-                <div className="flex items-center gap-3">
-                    <label className="text-sm">Upload rate / hour</label>
-                    <input
-                        type="number"
-                        className="w-28 rounded border p-1"
-                        value={ratePerHour}
-                        min={1}
-                        onChange={(e) => setRatePerHour(Number(e.target.value))}
-                    />
+                            <label className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={purgeRejected}
+                                    onChange={(e) => setPurgeRejected(e.target.checked)}
+                                />
+                                <span className="text-sm">Purge rejected uploads from R2</span>
+                            </label>
+
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm">Upload rate / hour</label>
+                                <input
+                                    type="number"
+                                    className="w-28 rounded border p-1"
+                                    value={ratePerHour}
+                                    min={1}
+                                    onChange={(e) => setRatePerHour(Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Right: action (auto width, sticks to right) */}
+                        <div className="flex sm:justify-end">
+                            <button
+                                onClick={onSaveSettings}
+                                disabled={saving}
+                                className="rounded-xl bg-ink/90 px-3 py-2 text-ink disabled:opacity-50"
+                            >
+                                {saving ? "Saving…" : "Save settings"}
+                            </button>
+                        </div>
+
+                        {/* Full-width note */}
+                        <p className="sm:col-span-2 text-xs text-ink/60">
+                            When auto-publish is off, new photos are saved as <em>pending</em> and
+                            hidden until approved via this queue.
+                        </p>
+                    </div>
                 </div>
-
-                <div className="flex items-center sm:justify-end">
-                    <button
-                        onClick={onSaveSettings}
-                        disabled={saving}
-                        className="rounded-xl bg-ink/90 px-3 py-2 text-ink disabled:opacity-50"
-                    >
-                        {saving ? "Saving…" : "Save settings"}
-                    </button>
-                </div>
-
-                <p className="sm:col-span-3 text-xs text-ink/60">
-                    When auto-publish is off, new photos are saved as <em>pending</em> and hidden
-                    until approved via this queue.
-                </p>
             </div>
 
             {/* Mode switcher */}
@@ -1136,5 +1152,45 @@ function SelectYN({
             <option value="1">Yes</option>
             <option value="0">No</option>
         </select>
+    );
+}
+
+/** Reusable row: label + (optional) description + control */
+function SettingRow({
+    label,
+    desc,
+    control,
+    alignTop = false,
+}: {
+    label: string;
+    desc?: string;
+    control: React.ReactNode;
+    alignTop?: boolean;
+}) {
+    return (
+        <div className="grid gap-3 sm:grid-cols-[1fr,2fr] items-center py-3">
+            <div className={alignTop ? "self-start" : ""}>
+                <div className="font-medium text-ink">{label}</div>
+                {desc && <div className="text-xs text-ink/60 mt-0.5">{desc}</div>}
+            </div>
+            <div className={alignTop ? "self-start" : ""}>{control}</div>
+        </div>
+    );
+}
+
+/** A subtle switch look (keeps your checkbox semantics) */
+function Switch({ checked, onChange }: { checked: boolean; onChange: (b: boolean) => void }) {
+    return (
+        <label className="inline-flex items-center cursor-pointer select-none">
+            <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={checked}
+                onChange={(e) => onChange(e.target.checked)}
+            />
+            <span className="relative inline-block h-6 w-10 rounded-full bg-ink/20 transition peer-checked:bg-ink">
+                <span className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[#FAF7EC] shadow transition-transform peer-checked:translate-x-4" />
+            </span>
+        </label>
     );
 }
