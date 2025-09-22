@@ -27,24 +27,86 @@ export default function Gallery() {
     const [showUpload, setShowUpload] = useState(false);
     const moreRef = useRef<HTMLDivElement>(null);
 
-    const fetchMore = useCallback(async () => {
-        setLoading(true);
-        const res = await fetch(
-            `/api/gallery?limit=40${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`
-        );
-        const json = await res.json();
-        const normalized = (json.items as any[]).map((p) => ({
-            key: p.key ?? p.id,
-            width: p.width,
-            height: p.height,
-            caption: p.caption,
-            display_name: p.display_name,
-        })) as Photo[];
+    const isFetchingRef = useRef(false);
+    const ioRef = useRef<IntersectionObserver | null>(null);
 
-        setItems((i) => [...i, ...normalized]);
-        setCursor(json.nextCursor ?? null);
-        setLoading(false);
-        setInitialLoaded(true);
+    async function fetchMore() {
+        if (isFetchingRef.current) return;
+        if (cursor === null) return; // no more pages
+
+        isFetchingRef.current = true;
+        setLoading(true);
+        try {
+            const res = await fetch(
+                `/api/gallery?limit=40${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`
+            );
+            const json = await res.json();
+
+            const normalized = (json.items as any[]).map((p) => ({
+                key: p.key ?? p.id,
+                width: p.width,
+                height: p.height,
+                caption: p.caption,
+                display_name: p.display_name,
+            })) as Photo[];
+
+            setItems((i) => [...i, ...normalized]);
+
+            const next = json.nextCursor || null;
+            setCursor(next);
+
+            if (next === null && ioRef.current && moreRef.current) {
+                ioRef.current.unobserve(moreRef.current);
+            }
+        } finally {
+            setLoading(false);
+            isFetchingRef.current = false;
+        }
+    }
+
+    useEffect(() => {
+        (async () => {
+            isFetchingRef.current = true;
+            setLoading(true);
+            try {
+                const res = await fetch(`/api/gallery?limit=40`);
+                const json = await res.json();
+
+                const normalized = (json.items as any[]).map((p) => ({
+                    key: p.key ?? p.id,
+                    width: p.width,
+                    height: p.height,
+                    caption: p.caption,
+                    display_name: p.display_name,
+                })) as Photo[];
+
+                setItems(normalized);
+                setCursor(json.nextCursor || null);
+            } finally {
+                setLoading(false);
+                isFetchingRef.current = false;
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        if (!moreRef.current) return;
+
+        ioRef.current = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting && !isFetchingRef.current && cursor !== null) {
+                    fetchMore();
+                }
+            },
+            { rootMargin: "800px" }
+        );
+
+        ioRef.current.observe(moreRef.current);
+        return () => {
+            ioRef.current?.disconnect();
+            ioRef.current = null;
+        };
     }, [cursor]);
 
     useEffect(() => {
