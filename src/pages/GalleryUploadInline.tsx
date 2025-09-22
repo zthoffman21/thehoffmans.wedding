@@ -2,6 +2,17 @@ import { useState } from "react";
 
 type UploadGrant = { key: string; uploadURL: string; contentType: string };
 
+function safeFilename(s: string) {
+  return s.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+function friendlyName({ nameHint, original }: { nameHint?: string; original: string }) {
+  const base =
+    (nameHint && safeFilename(nameHint)) ||
+    (original.split(".")[0] ? safeFilename(original.split(".")[0]!) : "photo");
+  const ext = original.includes(".") ? "." + original.split(".").pop() : ".jpg";
+  return `${base}${ext}`;
+}
+
 export default function GalleryUploadInline({ onDone }: { onDone?: () => void }) {
   const [files, setFiles] = useState<FileList | null>(null);
   const [name, setName] = useState("");
@@ -49,6 +60,7 @@ export default function GalleryUploadInline({ onDone }: { onDone?: () => void })
         display_name?: string;
         width?: number;
         height?: number;
+        download_name?: string;
       }> = [];
 
       for (let i = 0; i < grants.items.length; i++) {
@@ -71,6 +83,7 @@ export default function GalleryUploadInline({ onDone }: { onDone?: () => void })
           display_name: name || undefined,
           width: dims.w,
           height: dims.h,
+          download_name: friendlyName({ nameHint: caption || name, original: f.name }),
         });
 
         setProgress(Math.round(((i + 1) / grants.items.length) * 100));

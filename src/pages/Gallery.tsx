@@ -20,6 +20,65 @@ function rawImgUrl(key: string) {
     return `/${IMG_ORIGIN}/${encodeURI(key)}`;
 }
 
+function filenameFromKey(key: string) {
+    try {
+        return decodeURI(key.split("/").pop() || "photo.jpg");
+    } catch {
+        return key.split("/").pop() || "photo.jpg";
+    }
+}
+
+// Basic iOS detection to pick friendliest UX
+const IS_IOS =
+  typeof navigator !== "undefined" &&
+  (
+    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1) 
+  );
+
+// Unified save handler: Share on iOS, download elsewhere, open-tab fallback
+async function handleSave(key: string) {
+    const url = rawImgUrl(key);
+    const name = filenameFromKey(key);
+
+    try {
+        // Try Web Share with a File (best iOS UX if supported)
+        if (navigator.share && (navigator as any).canShare) {
+            const resp = await fetch(url, { mode: "cors" });
+            const blob = await resp.blob();
+            const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+            if ((navigator as any).canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: "Save photo" });
+                return;
+            }
+        }
+    } catch {
+        // ignore and try next fallback
+    }
+
+    if (!IS_IOS) {
+        // Non-iOS: trigger a download programmatically
+        try {
+            const resp = await fetch(url, { mode: "cors" });
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+            return;
+        } catch {
+            // fall through to open
+        }
+    }
+
+    // Last resort (especially iOS older versions): open full image to long-press save
+    window.open(url, "_blank", "noopener");
+}
+
 /* -------------------------------- Component ------------------------------- */
 export default function Gallery() {
     const [items, setItems] = useState<Photo[]>([]);
@@ -191,16 +250,15 @@ export default function Gallery() {
                                 )}
 
                                 {/* Download button */}
-                                <a
-                                    href={rawImgUrl(p.key)}
-                                    download={p.key.split("/").pop() || "photo.jpg"}
-                                    target="_blank"
-                                    rel="noopener"
-                                    title="Download"
-                                    aria-label="Download image"
-                                    className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25 backdrop-blur transition hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                                <button
+                                    onClick={() => handleSave(p.key)}
+                                    title="Save"
+                                    aria-label="Save image"
+                                    className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md
+             bg-black/55 px-2 py-1 text-[11px] text-white ring-1 ring-white/25
+             backdrop-blur transition hover:bg-black/70 focus:outline-none
+             focus-visible:ring-2 focus-visible:ring-white/50"
                                 >
-                                    {/* Download icon (stroke-current matches text color) */}
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         className="size-3.5"
@@ -215,8 +273,8 @@ export default function Gallery() {
                                             strokeLinejoin="round"
                                         />
                                     </svg>
-                                    <span className="hidden sm:inline">Download</span>
-                                </a>
+                                    <span className="hidden sm:inline">Save</span>
+                                </button>
                             </div>
                         </figure>
                     ))}
