@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Masonry from "../components/Masonry";
 import GalleryUploadInline from "./GalleryUploadInline";
 
+/* --------------------------------- Types --------------------------------- */
 type Photo = {
     key: string;
     width?: number;
@@ -10,20 +11,23 @@ type Photo = {
     display_name?: string;
 };
 
+/* ------------------------------ Image helpers ----------------------------- */
 const IMG_ORIGIN = import.meta.env.VITE_IMG_PUBLIC_ORIGIN;
-
 function cfImg(key: string, w: number, q = 75) {
     return `/cdn-cgi/image/width=${w},quality=${q},format=auto/${IMG_ORIGIN}/${encodeURI(key)}`;
 }
 
+/* -------------------------------- Component ------------------------------- */
 export default function Gallery() {
     const [items, setItems] = useState<Photo[]>([]);
     const [cursor, setCursor] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [initialLoaded, setInitialLoaded] = useState(false);
+
     const [showUpload, setShowUpload] = useState(false);
     const moreRef = useRef<HTMLDivElement>(null);
 
-    async function fetchMore() {
+    const fetchMore = useCallback(async () => {
         setLoading(true);
         const res = await fetch(
             `/api/gallery?limit=40${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`
@@ -40,11 +44,13 @@ export default function Gallery() {
         setItems((i) => [...i, ...normalized]);
         setCursor(json.nextCursor ?? null);
         setLoading(false);
-    }
+        setInitialLoaded(true);
+    }, [cursor]);
 
     useEffect(() => {
         fetchMore();
-    }, []);
+    }, [fetchMore]);
+
     useEffect(() => {
         const io = new IntersectionObserver(
             (e) => {
@@ -54,59 +60,106 @@ export default function Gallery() {
         );
         if (moreRef.current) io.observe(moreRef.current);
         return () => io.disconnect();
-    }, [loading, cursor]);
+    }, [loading, cursor, fetchMore]);
 
     return (
-        <section className="container-px py-8">
-            <header className="mb-4 flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Shared Album</h1>
-                <button
-                    onClick={() => setShowUpload(true)}
-                    className="rounded-xl px-3 py-2 bg-ink/90 text-ink"
-                >
-                    Add photos
-                </button>
+        <section
+            className="container-px pb-12 pt-4 text-[#FAF7EC]"
+            style={{
+                background:
+                    "radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,0.06), transparent), linear-gradient(180deg, #0B2E49, #071C2C)",
+                minHeight: "100dvh",
+            }}
+        >
+            {/* Sticky header */}
+            <header className="sticky top-0 z-30 -mx-[var(--container-px,0)] mb-4 bg-gradient-to-b from-[#0B2E49]/95 to-transparent px-[var(--container-px,1rem)] py-3 backdrop-blur">
+                {/* Tag row with "Public gallery" AND tag-styled Add button */}
+                <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
+                    <span className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10">
+                        Shared Album
+                    </span>
+
+                    <button
+                        onClick={() => setShowUpload(true)}
+                        className="rounded-lg bg-[#FAF7EC] px-3 py-1.5 font-medium text-[#0B2E49] shadow-sm ring-1 ring-white/20 transition
+             hover:bg-white/95 hover:shadow-md active:scale-[0.98]
+             focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                        aria-label="Add photos"
+                    >
+                        + Add photos
+                    </button>
+                </div>
             </header>
 
-            <Masonry>
-                {items.map((p) => (
-                    <figure key={p.key} className="mb-4 break-inside-avoid">
-                        <img
-                            className="w-full h-auto rounded-xl bg-neutral-200 object-cover"
-                            loading="lazy"
-                            src={cfImg(p.key, 900)}
-                            srcSet={`
-                ${cfImg(p.key, 480, 70)} 480w,
-                ${cfImg(p.key, 900, 75)} 900w,
-                ${cfImg(p.key, 1400, 75)} 1400w
-              `}
-                            sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 22vw"
-                            alt={p.caption || "Wedding photo"}
-                            style={
-                                p.width && p.height
-                                    ? { aspectRatio: `${p.width} / ${p.height}` }
-                                    : undefined
-                            }
+            {/* Skeletons while first page loads */}
+            {!initialLoaded && (
+                <Masonry>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                        <div
+                            key={`sk-${i}`}
+                            className="mb-4 h-64 animate-pulse break-inside-avoid rounded-xl bg-white/10 ring-1 ring-white/10"
                         />
-                        {(p.caption || p.display_name) && (
-                            <figcaption className="mt-1 text-xs text-ink/70">
-                                {p.caption} {p.display_name ? `— ${p.display_name}` : ""}
-                            </figcaption>
-                        )}
-                    </figure>
-                ))}
-            </Masonry>
+                    ))}
+                </Masonry>
+            )}
 
+            {/* Image grid */}
+            {initialLoaded && (
+                <Masonry>
+                    {items.map((p) => (
+                        <figure key={p.key} className="mb-4 break-inside-avoid">
+                            <div className="relative overflow-hidden rounded-xl shadow-sm ring-1 ring-white/10">
+                                <img
+                                    className="h-auto w-full object-cover transition will-change-transform hover:scale-[1.01]"
+                                    loading="lazy"
+                                    src={cfImg(p.key, 900)}
+                                    srcSet={`${cfImg(p.key, 480, 70)} 480w, ${cfImg(
+                                        p.key,
+                                        900,
+                                        75
+                                    )} 900w, ${cfImg(p.key, 1400, 75)} 1400w`}
+                                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 22vw"
+                                    alt={p.caption || "Wedding photo"}
+                                    style={
+                                        p.width && p.height
+                                            ? { aspectRatio: `${p.width} / ${p.height}` }
+                                            : undefined
+                                    }
+                                />
+                                {(p.caption || p.display_name) && (
+                                    <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-[11px] text-white/90">
+                                        {p.caption} {p.display_name ? `— ${p.display_name}` : ""}
+                                    </figcaption>
+                                )}
+                            </div>
+                        </figure>
+                    ))}
+                </Masonry>
+            )}
+
+            {/* Infinite scroll sentinel & loader */}
             <div ref={moreRef} className="h-10" />
-            {loading && <p className="text-center text-ink/60 mt-4">Loading…</p>}
+            {loading && initialLoaded && <p className="mt-4 text-center text-white/70">Loading…</p>}
 
-            {/* Modal */}
+            {/* Upload modal */}
             {showUpload && (
-                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-                    <div className="w-full max-w-xl rounded-2xl bg-white p-4 shadow-xl">
-                        <div className="flex items-center justify-between mb-3">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Upload photos"
+                    onClick={(e) => {
+                        if (e.currentTarget === e.target) setShowUpload(false);
+                    }}
+                >
+                    <div className="w-full max-w-xl rounded-2xl bg-[#0E2235] p-4 text-[#FAF7EC] shadow-2xl ring-1 ring-white/10">
+                        <div className="mb-3 flex items-center justify-between">
                             <h2 className="text-lg font-semibold">Upload photos</h2>
-                            <button onClick={() => setShowUpload(false)} className="text-ink/70">
+                            <button
+                                onClick={() => setShowUpload(false)}
+                                className="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                                aria-label="Close upload"
+                            >
                                 ✕
                             </button>
                         </div>
