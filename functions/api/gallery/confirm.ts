@@ -100,7 +100,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
             const desired = {
                 contentType: desiredContentType,
-                contentDisposition: `inline; filename="${safeAscii}"; filename*=${utf8Star}`,
+                contentDisposition: `attachment; filename="${safeAscii}"; filename*=${utf8Star}`,
                 cacheControl:
                     head.httpMetadata?.cacheControl || "public, max-age=31536000, immutable",
             };
@@ -132,27 +132,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                 } catch (e) {
                     console.warn("R2.put rewrite failed for", key, e);
                     // non-fatal
-                }
-            }
-
-            if (needsRewrite) {
-                // Stream the object and overwrite with new httpMetadata
-                const obj = await env.R2.get(key);
-                if (!obj || !obj.body) {
-                    return json(
-                        { ok: false, message: "Failed to read object body", key },
-                        { status: 500 }
-                    );
-                }
-
-                try {
-                    await env.R2.put(key, obj.body, {
-                        httpMetadata: desired,
-                        customMetadata: head.customMetadata, // preserve any custom metadata you set earlier
-                    });
-                } catch (e) {
-                    console.warn("R2.put rewrite failed for", key, e);
-                    // Don't fail whole batch if metadata rewrite hiccups.
                 }
             }
         }
