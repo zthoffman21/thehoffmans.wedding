@@ -32,50 +32,33 @@ const IS_IOS =
     typeof navigator !== "undefined" &&
     (/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1));
+        
+function apiFileUrl(key: string, opts?: { disposition?: "inline" | "attachment"; name?: string }) {
+  const q = new URLSearchParams({ key });
+  if (opts?.disposition) q.set("disposition", opts.disposition);
+  if (opts?.name) q.set("name", opts.name);
+  return `/api/gallery/file?${q.toString()}`;
+}
 
-// Unified save: iOS → Share sheet; non-iOS → download; fallback → open
 async function handleSave(key: string) {
-    const url = rawImgUrl(key);
-    const name = filenameFromKey(key);
-    const navAny = navigator as any;
+  const name = filenameFromKey(key);
 
-    if (IS_IOS) {
-        try {
-            // Best iOS UX: Share sheet with file (lets user choose "Save Image")
-            if (navAny?.share) {
-                const resp = await fetch(url, { mode: "cors" });
-                const blob = await resp.blob();
-                const file = new File([blob], name, { type: blob.type || "image/jpeg" });
-                if (!navAny.canShare || navAny.canShare({ files: [file] })) {
-                    await navAny.share({ files: [file], title: "Save photo" });
-                    return;
-                }
-            }
-        } catch {
-            // fall through to open below
-        }
-        // Fallback for older iOS: open image for long-press → “Save Image”
-        window.open(url, "_blank", "noopener");
-        return;
-    }
+  if (IS_IOS) {
+    // Best path to Photos: open the image inline so the user can long-press → "Save Image"
+    const viewUrl = apiFileUrl(key, { disposition: "inline", name });
+    window.open(viewUrl, "_blank", "noopener");
+    return;
+  }
 
-    // Non-iOS: force a download with the friendly name
-    try {
-        const resp = await fetch(url, { mode: "cors" });
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = name; // browsers will use this; your R2 headers also help
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-        return;
-    } catch {
-        // Final fallback
-        window.open(url, "_blank", "noopener");
-    }
+  // Desktop: use attachment so it downloads with the right filename
+  const dlUrl = apiFileUrl(key, { disposition: "attachment", name });
+  // Either navigate or synthesize a click to honor filename
+  const a = document.createElement("a");
+  a.href = dlUrl;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 /* -------------------------------- Component ------------------------------- */

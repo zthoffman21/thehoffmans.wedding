@@ -80,13 +80,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             const base = dot > 0 ? rawBase.slice(0, dot) : rawBase;
             const ext = dot > 0 ? rawBase.slice(dot) : ".jpg";
 
-            const safeAscii =
-                (base
-                    .replace(/[^\w.\-]+/g, "-")
-                    .replace(/-+/g, "-")
-                    .replace(/^-|-$/g, "") || "photo") + ext;
-            const utf8Star = "UTF-8''" + encodeURIComponent(base + ext).replace(/%20/g, "+");
-
             // Choose a proper image Content-Type
             const desiredContentType =
                 head.httpMetadata?.contentType ||
@@ -100,7 +93,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
             const desired = {
                 contentType: desiredContentType,
-                contentDisposition: `attachment; filename="${safeAscii}"; filename*=${utf8Star}`,
                 cacheControl:
                     head.httpMetadata?.cacheControl || "public, max-age=31536000, immutable",
             };
@@ -113,7 +105,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
             const needsRewrite =
                 current.contentType !== desired.contentType ||
-                current.contentDisposition !== desired.contentDisposition ||
                 current.cacheControl !== desired.cacheControl;
 
             if (needsRewrite) {
