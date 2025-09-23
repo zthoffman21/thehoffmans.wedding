@@ -8,7 +8,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "100", 10), 200);
 
   const rows = await env.DB.prepare(
-    `SELECT id, caption, display_name, width, height, created_at
+    `SELECT id, caption, display_name, width, height, created_at, album_id
      FROM photos WHERE status=? ORDER BY created_at DESC LIMIT ?`
   ).bind(status, limit).all();
 
