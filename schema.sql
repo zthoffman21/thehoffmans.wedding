@@ -115,6 +115,11 @@ INSERT OR IGNORE INTO settings(key, value) VALUES
   ('purge_rejected_uploads', '1');
 
 
+  CREATE TABLE IF NOT EXISTS email_usage (
+  ym TEXT PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 0
+);
+
 
 CREATE TRIGGER IF NOT EXISTS party_fts_insert AFTER INSERT ON parties BEGIN
   INSERT INTO party_fts (party_id, display_name, members)

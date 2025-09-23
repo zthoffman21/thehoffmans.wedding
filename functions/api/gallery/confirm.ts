@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import type { Env } from "../_utils";
+import { sendEmail } from "../email";
 
 type PhotoMeta = {
     imageId?: string;
@@ -18,6 +19,139 @@ const json = (d: unknown, init: ResponseInit = {}) =>
         ...init,
         headers: { "content-type": "application/json; charset=UTF-8", ...(init.headers || {}) },
     });
+
+function escapeHtml(s: unknown): string {
+    return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+function fmtBytes(n?: number | null) {
+    if (!n || n <= 0) return "";
+    const u = ["B", "KB", "MB", "GB", "TB"];
+    let i = 0,
+        v = n;
+    while (v >= 1024 && i < u.length - 1) {
+        v /= 1024;
+        i++;
+    }
+    return `${v.toFixed(v < 10 && i > 0 ? 1 : 0)} ${u[i]}`;
+}
+function basename(path: string) {
+    try {
+        return path.split("/").pop() || path;
+    } catch {
+        return path;
+    }
+}
+function nowNY() {
+    return new Date().toLocaleString("en-US", { timeZone: "America/New_York", hour12: true });
+}
+function renderUploadEmailHTML(photos: PhotoMeta[], adminUrl?: string) {
+    const count = photos.length;
+    const maxList = 10; // show up to 10 items, then "+N more"
+    const more = Math.max(0, count - maxList);
+
+    const byAlbum: Record<string, number> = {};
+    for (const p of photos) {
+        const a = p.album_id || "default";
+        byAlbum[a] = (byAlbum[a] ?? 0) + 1;
+    }
+    const albumLines = Object.entries(byAlbum)
+        .map(([a, c]) => `<li><b>${escapeHtml(a)}</b>: ${c}</li>`)
+        .join("");
+
+    const rows = photos
+        .slice(0, maxList)
+        .map((p) => {
+            const name = escapeHtml(p.display_name || p.imageId);
+            const cap = p.caption
+                ? `&nbsp;—&nbsp;<span style="color:#666;">${escapeHtml(p.caption)}</span>`
+                : "";
+            const dims = p.width && p.height ? `${p.width}×${p.height}` : "";
+            const size = fmtBytes(p.size);
+            const meta = [dims, size].filter(Boolean).join(" • ");
+            return `
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #eee;">
+          <div style="font-size:14px;line-height:1.3;">
+            <b>${name}</b>${cap}
+            ${meta ? `<div style="color:#666;font-size:12px;margin-top:2px;">${meta}</div>` : ""}
+            ${
+                p.album_id
+                    ? `<div style="color:#666;font-size:12px;margin-top:2px;">Album: ${escapeHtml(
+                          p.album_id!
+                      )}</div>`
+                    : ""
+            }
+          </div>
+        </td>
+      </tr>
+    `;
+        })
+        .join("");
+
+    const moreLine = more
+        ? `<tr><td style="padding:10px 0;color:#666;font-size:13px;">+${more} more …</td></tr>`
+        : "";
+
+    const button = adminUrl
+        ? `
+      <a href="${escapeHtml(adminUrl)}"
+         style="display:inline-block;background:#111;color:#fff;text-decoration:none;
+                padding:12px 18px;border-radius:10px;font-weight:600;">
+        Review in Admin
+      </a>`
+        : "";
+
+    return `
+  <div style="background:#f6f5ef;padding:24px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:14px;padding:24px;border:1px solid #e7e4d8;">
+            <tr>
+              <td>
+                <h2 style="margin:0 0 8px 0;font:600 20px ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;">New Images Uploaded</h2>
+                <div style="color:#666;font-size:12px;margin-bottom:16px;">${nowNY()} (ET)</div>
+
+                <div style="font-size:16px;margin-bottom:12px;">
+                  <b>${count}</b> photo${count === 1 ? "" : "s"} uploaded.
+                </div>
+
+                <div style="margin:12px 0 8px 0;">
+                  <div style="font-size:14px;font-weight:600;margin-bottom:6px;">By album</div>
+                  <ul style="margin:0;padding-left:18px;color:#333;font-size:14px;line-height:1.4;">
+                    ${albumLines || "<li>Uncategorized</li>"}
+                  </ul>
+                </div>
+
+                <div style="height:1px;background:#eee;margin:16px 0;"></div>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  ${rows}
+                  ${moreLine}
+                </table>
+
+                ${button ? `<div style="margin-top:20px;">${button}</div>` : ""}
+
+                <div style="color:#999;font-size:12px;margin-top:18px;">
+                  This is an automated notification from thehoffmans.wedding
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div style="color:#999;font-size:11px;margin-top:10px;">Email ID: ${escapeHtml(
+              crypto.randomUUID?.() ?? ""
+          )}</div>
+        </td>
+      </tr>
+    </table>
+  </div>`;
+}
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     try {
@@ -134,8 +268,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             `SELECT value FROM settings WHERE key='auto_publish_uploads' LIMIT 1`
         ).first<{ value?: string }>();
         const auto = row?.value === "1";
-        const initialStatus = auto ? "approved" : "pending";
-        const initialPublic = auto ? 1 : 0; // hide until approved when pending
 
         function basenameFromKey(k: string) {
             const s = k.split("/");
@@ -189,6 +321,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     .run();
             }
 
+            const adminUrl = `"https://thehoffmans.wedding"}/admin?tab=gallery&mode=posted`;
+            const result = await sendEmail(env, {
+                to: env.EMAIL_ADMIN_TO,
+                subject: `New Images Uploaded: ${photos.length} photo(s)`,
+                html: renderUploadEmailHTML(photos, adminUrl),
+            });
+
+            if (!result.ok && result.status === 402) {
+                console.log("Email not sent: free-tier quota likely exceeded.");
+            }
+
             return json({ ok: true, inserted: photos.length, status: "approved" });
         } else {
             // Pending: keep in tmp, insert with pending/is_public=0, remember album_id
@@ -208,6 +351,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                 )
             );
             await env.DB.batch(stmts);
+
+            const adminUrl = `"https://thehoffmans.wedding"}/admin?tab=gallery&mode=pending`;
+            const result = await sendEmail(env, {
+                to: env.EMAIL_ADMIN_TO,
+                subject: `New Images Waiting For Approval: ${photos.length} photo(s)`,
+                html: renderUploadEmailHTML(photos, adminUrl),
+            });
+            if (!result.ok && result.status === 402) {
+                console.log("Email not sent: free-tier quota likely exceeded.");
+            }
+
             return json({ ok: true, inserted: photos.length, status: "pending" });
         }
     } catch (err: any) {

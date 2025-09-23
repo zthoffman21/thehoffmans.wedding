@@ -18,6 +18,9 @@ R2_ACCOUNT_ID = "c6fe53e49dbf0c67ee5fe60c2c01b001"
 R2_BUCKET     = "wedding-photos"
 VITE_TURNSTILE_SITE_KEY = "0x4AAAAAAB2ZTZXxGYIbAmbl"
 VITE_IMG_PUBLIC_ORIGIN = "https://images.thehoffmans.wedding"
+EMAIL_FROM = "noreply@thehoffmans.wedding"
+EMAIL_ADMIN_TO = "zachhoffman@ymail.com" 
+EMAIL_ENABLED = "true"
 
 # Preview overrides if needed
 [env.preview.vars]

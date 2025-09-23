@@ -11,7 +11,11 @@ export type Env = {
 
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
-  TURNSTILE_SECRET?: string;
+
+  RESEND_API_KEY: string;
+  EMAIL_FROM: string;
+  EMAIL_ADMIN_TO: string;
+  EMAIL_ENABLED: string;
 };
 
 export const RSVPSubmissionSchema = z.object({
