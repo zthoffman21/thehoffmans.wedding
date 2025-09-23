@@ -321,7 +321,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     .run();
             }
 
-            const adminUrl = `"https://thehoffmans.wedding"}/admin?tab=gallery&mode=posted`;
+            const adminUrl = "https://thehoffmans.wedding/admin";
             const result = await sendEmail(env, {
                 to: env.EMAIL_ADMIN_TO,
                 subject: `New Images Uploaded: ${photos.length} photo(s)`,
@@ -352,7 +352,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             );
             await env.DB.batch(stmts);
 
-            const adminUrl = `"https://thehoffmans.wedding"}/admin?tab=gallery&mode=pending`;
+            const adminUrl = "https://thehoffmans.wedding/admin";
             const result = await sendEmail(env, {
                 to: env.EMAIL_ADMIN_TO,
                 subject: `New Images Waiting For Approval: ${photos.length} photo(s)`,
