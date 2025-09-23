@@ -149,6 +149,38 @@ export default function Gallery() {
         })();
     }, []);
 
+    // Re-fetch first page whenever album changes
+    useEffect(() => {
+        let aborted = false;
+        (async () => {
+            isFetchingRef.current = true;
+            setLoading(true);
+            try {
+                const res = await fetch(`/api/gallery?limit=40&album=${encodeURIComponent(album)}`);
+                const json = await res.json();
+
+                if (aborted) return;
+                const normalized = (json.items as any[]).map((p) => ({
+                    key: p.key ?? p.id,
+                    width: p.width,
+                    height: p.height,
+                    caption: p.caption,
+                    display_name: p.display_name,
+                })) as Photo[];
+
+                setItems(normalized);
+                setCursor(json.nextCursor || null);
+                setInitialLoaded(true);
+            } finally {
+                isFetchingRef.current = false;
+                setLoading(false);
+            }
+        })();
+        return () => {
+            aborted = true;
+        };
+    }, [album]);
+
     // Single IntersectionObserver wired to the sentinel
     useEffect(() => {
         if (!moreRef.current) return;
@@ -190,20 +222,20 @@ export default function Gallery() {
                         of the day from their point of view.
                     </p>
 
-                    <div className="mt-6 flex items-center gap-3 text-sm text-white/80">
+                    <div className="mt-6 flex items-center gap-3 text-sm text-[#FAF7EC]/80">
                         <select
-                            className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10"
+                            className="rounded-lg bg-[#FAF7EC]/10 px-2 py-1 ring-1 ring-[#FAF7EC]/10"
                             value={album}
                             onChange={(e) => {
-                                setItems([]); // reset list
-                                setCursor(null); // reset paging
+                                setItems([]);
+                                setCursor(null);
                                 setInitialLoaded(false);
                                 setAlbum(e.target.value as AlbumId);
                             }}
                             aria-label="Choose an album"
                         >
                             {ALBUMS.map((a) => (
-                                <option key={a.id} value={a.id}>
+                                <option className="text-[#203648] bg-[#FAF7EC]" key={a.id} value={a.id}>
                                     {a.label}
                                 </option>
                             ))}
@@ -315,36 +347,41 @@ export default function Gallery() {
 
             {/* Upload modal */}
             {showUpload && (
-                <GalleryUploadInline
-                    albumId={album}
-                    onDone={() => {
-                        setShowUpload(false);
-                        // reload first page for this album
-                        (async () => {
-                            isFetchingRef.current = true;
-                            setLoading(true);
-                            try {
-                                const res = await fetch(
-                                    `/api/gallery?limit=40&album=${encodeURIComponent(album)}`
-                                );
-                                const json = await res.json();
-                                const normalized = (json.items as any[]).map((p) => ({
-                                    key: p.key ?? p.id,
-                                    width: p.width,
-                                    height: p.height,
-                                    caption: p.caption,
-                                    display_name: p.display_name,
-                                }));
-                                setItems(normalized);
-                                setCursor(json.nextCursor || null);
-                                setInitialLoaded(true);
-                            } finally {
-                                setLoading(false);
-                                isFetchingRef.current = false;
-                            }
-                        })();
-                    }}
-                />
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                    aria-modal="true"
+                    role="dialog"
+                >
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setShowUpload(false)}
+                    />
+                    {/* Panel */}
+                    <div className="relative z-[61] w-full max-w-md rounded-2xl border bg-[#FAF7EC] p-4 shadow-xl">
+                        <div className="mb-2 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-ink">Add photos</h2>
+                            <button
+                                onClick={() => setShowUpload(false)}
+                                className="rounded-md border px-2 py-1 text-sm"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <GalleryUploadInline
+                            albumId={album}
+                            onDone={() => {
+                                setShowUpload(false);
+                                // Optional: refresh first page so newly-approved (auto) items show
+                                setItems([]);
+                                setCursor(null);
+                                setInitialLoaded(false);
+                                // the [album]-effect above will refetch
+                                setAlbum((a) => a);
+                            }}
+                        />
+                    </div>
+                </div>
             )}
         </section>
     );
