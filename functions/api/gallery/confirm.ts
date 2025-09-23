@@ -9,6 +9,7 @@ type PhotoMeta = {
     width?: number | null;
     height?: number | null;
     download_name?: string | null;
+    album_id?: string | null;
 };
 type ConfirmBody = { key?: string; size?: number } | { photos?: PhotoMeta[] };
 
@@ -43,6 +44,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                 width: p.width == null ? null : Number(p.width),
                 height: p.height == null ? null : Number(p.height),
                 download_name: p.download_name ?? null,
+                album_id: (p as any).album_id ?? "album_general",
             }))
             .filter((p) => !!p.imageId);
         if (photos.length === 0)
@@ -135,26 +137,79 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         const initialStatus = auto ? "approved" : "pending";
         const initialPublic = auto ? 1 : 0; // hide until approved when pending
 
-        // ---- batch insert (id = imageId) ----
-        const stmts = photos.map((p) =>
-            env.DB.prepare(
-                `INSERT INTO photos
-      (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
-     VALUES
-      (?, 'album_default', ?, ?, ?, ?, NULL, ?, ?, CURRENT_TIMESTAMP)`
-            ).bind(
-                p.imageId!,
-                p.caption,
-                p.display_name,
-                p.width,
-                p.height,
-                initialStatus,
-                initialPublic
-            )
-        );
-        await env.DB.batch(stmts);
+        function basenameFromKey(k: string) {
+            const s = k.split("/");
+            return s[s.length - 1] || "photo.jpg";
+        }
 
-        return json({ ok: true, inserted: photos.length, status: initialStatus });
+        // ---- batch insert (id = imageId) ----
+        if (auto) {
+            // Auto-publish: move tmp -> gallery/<album> and insert as approved/public
+            for (const p of photos) {
+                const tmpKey = p.imageId!;
+                const albumId = (p.album_id || "album_general").trim();
+                const finalKey = `gallery/${albumId}/${basenameFromKey(tmpKey)}`;
+
+                const head = await env.R2.head(tmpKey);
+                const obj = await env.R2.get(tmpKey);
+                if (!obj || !obj.body) {
+                    return json(
+                        { ok: false, message: "Failed to read R2 object", key: tmpKey },
+                        { status: 500 }
+                    );
+                }
+
+                // write final, then delete tmp
+                await env.R2.put(finalKey, obj.body, {
+                    httpMetadata: {
+                        contentType:
+                            head?.httpMetadata?.contentType ||
+                            (/\.(png)$/i.test(finalKey)
+                                ? "image/png"
+                                : /\.(webp)$/i.test(finalKey)
+                                ? "image/webp"
+                                : /\.(gif)$/i.test(finalKey)
+                                ? "image/gif"
+                                : "image/jpeg"),
+                        cacheControl:
+                            head?.httpMetadata?.cacheControl ||
+                            "public, max-age=31536000, immutable",
+                    },
+                    customMetadata: head?.customMetadata,
+                });
+                await env.R2.delete(tmpKey);
+
+                await env.DB.prepare(
+                    `INSERT INTO photos
+         (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
+       VALUES
+         (?, ?, ?, ?, ?, ?, NULL, 'approved', 1, CURRENT_TIMESTAMP)`
+                )
+                    .bind(finalKey, albumId, p.caption, p.display_name, p.width, p.height)
+                    .run();
+            }
+
+            return json({ ok: true, inserted: photos.length, status: "approved" });
+        } else {
+            // Pending: keep in tmp, insert with pending/is_public=0, remember album_id
+            const stmts = photos.map((p) =>
+                env.DB.prepare(
+                    `INSERT INTO photos
+         (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
+       VALUES
+         (?, ?, ?, ?, ?, ?, NULL, 'pending', 0, CURRENT_TIMESTAMP)`
+                ).bind(
+                    p.imageId!,
+                    (p.album_id || "album_general").trim(),
+                    p.caption,
+                    p.display_name,
+                    p.width,
+                    p.height
+                )
+            );
+            await env.DB.batch(stmts);
+            return json({ ok: true, inserted: photos.length, status: "pending" });
+        }
     } catch (err: any) {
         console.error("confirm batch error:", err);
         return json({ ok: false, message: String(err?.message || err) }, { status: 500 });

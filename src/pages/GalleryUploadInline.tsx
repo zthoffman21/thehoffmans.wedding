@@ -16,7 +16,13 @@ function friendlyName({ nameHint, original }: { nameHint?: string; original: str
     return `${base}${ext}`;
 }
 
-export default function GalleryUploadInline({ onDone }: { onDone?: () => void }) {
+export default function GalleryUploadInline({
+    albumId = "album_general",
+    onDone,
+}: {
+    albumId?: string;
+    onDone?: () => void;
+}) {
     const [files, setFiles] = useState<FileList | null>(null);
     const [name, setName] = useState("");
     const [caption, setCaption] = useState("");
@@ -64,6 +70,7 @@ export default function GalleryUploadInline({ onDone }: { onDone?: () => void })
                 width?: number;
                 height?: number;
                 download_name?: string;
+                album_id?: string;
             }> = [];
 
             for (let i = 0; i < grants.items.length; i++) {
@@ -96,6 +103,7 @@ export default function GalleryUploadInline({ onDone }: { onDone?: () => void })
                     width: dims.w,
                     height: dims.h,
                     download_name: friendlyName({ nameHint: caption || name, original: f.name }),
+                    album_id: albumId,
                 });
 
                 setProgress(Math.round(((i + 1) / grants.items.length) * 100));

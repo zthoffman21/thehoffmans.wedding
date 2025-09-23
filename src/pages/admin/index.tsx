@@ -62,7 +62,21 @@ type AdminPhoto = {
     width?: number | null;
     height?: number | null;
     created_at: string;
+    album_id?: string | null;
 };
+
+const ALBUMS = [
+    { id: "album_general", label: "General" },
+    { id: "album_ceremony", label: "Ceremony" },
+    { id: "album_reception", label: "Reception" },
+    { id: "album_friends_family", label: "Friends & Family" },
+    { id: "album_details", label: "Details & Decor" },
+    { id: "album_party", label: "Dance Floor / Party" },
+] as const;
+
+function albumLabel(id?: string | null) {
+    return ALBUMS.find((a) => a.id === id)?.label ?? "General";
+}
 
 // lightweight fetch-as-json with error surfacing
 async function asJson<T>(res: Response): Promise<T> {
@@ -92,14 +106,15 @@ export async function getSettings() {
     }>(res);
     return data.settings;
 }
-async function listAdminPhotos(status = "pending", limit = 100) {
-    const res = await fetch(
-        `/api/admin/photos?status=${encodeURIComponent(status)}&limit=${limit}`,
-        {
-            headers: { Accept: "application/json" },
-            cache: "no-store",
-        }
-    );
+async function listAdminPhotos(status = "pending", limit = 100, album?: string) {
+    const url = new URL(`/api/admin/photos`, location.origin);
+    url.searchParams.set("status", status);
+    url.searchParams.set("limit", String(limit));
+    if (album && album !== "all") url.searchParams.set("album", album);
+    const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+    });
     return asJson<{ ok: true; items: AdminPhoto[] }>(res);
 }
 async function approvePhoto(id: string) {
@@ -790,7 +805,7 @@ function GalleryTab() {
     const [purgeRejected, setPurgeRejected] = useState(true);
 
     const [preview, setPreview] = useState<AdminPhoto | null>(null);
-
+    const [albumFilter, setAlbumFilter] = useState<string>("all");
     const [selected, setSelected] = useState<Set<string>>(new Set());
 
     function clearSelection() {
@@ -858,7 +873,7 @@ function GalleryTab() {
     }
     async function refreshPosted() {
         // server returns only approved/public items for 'approved'
-        const res = await listAdminPhotos("approved", 200);
+        const res = await listAdminPhotos("approved", 200, albumFilter);
         setPosted(res.items || []);
     }
     async function refreshActive() {
@@ -1046,6 +1061,34 @@ function GalleryTab() {
                 <div className="flex items-center gap-2">
                     {mode === "posted" && posted.length > 0 && (
                         <>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm">Album</label>
+                                <select
+                                    className="rounded-lg border px-2 py-1 text-sm bg-[#FAF7EC]"
+                                    value={albumFilter}
+                                    onChange={async (e) => {
+                                        setAlbumFilter(e.target.value);
+                                        setLoading(true);
+                                        try {
+                                            const res = await listAdminPhotos(
+                                                "approved",
+                                                200,
+                                                e.target.value
+                                            );
+                                            setPosted(res.items || []);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                >
+                                    <option value="all">All</option>
+                                    {ALBUMS.map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                             <button
                                 className="rounded-lg border px-3 py-1 text-sm"
                                 onClick={() => toggleAll(true)}
@@ -1123,6 +1166,11 @@ function GalleryTab() {
                                             {p.display_name ? `— ${p.display_name}` : ""}
                                         </figcaption>
                                     )}
+                                    <div className="mt-1 text-[11px] text-ink/60">
+                                        <span className="rounded border px-1.5 py-0.5 bg-[#FAF7EC]">
+                                            {albumLabel((p as any).album_id)}
+                                        </span>
+                                    </div>
                                 </figure>
 
                                 <div className="flex items-center justify-between">

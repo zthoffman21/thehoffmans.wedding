@@ -10,14 +10,19 @@ type Photo = {
     caption?: string;
     display_name?: string;
 };
-
+const ALBUMS = [
+    { id: "album_general", label: "General" },
+    { id: "album_ceremony", label: "Ceremony" },
+    { id: "album_reception", label: "Reception" },
+    { id: "album_friends_family", label: "Friends & Family" },
+    { id: "album_details", label: "Details & Decor" },
+    { id: "album_party", label: "Dance Floor / Party" },
+] as const;
+type AlbumId = (typeof ALBUMS)[number]["id"];
 /* ------------------------------ Image helpers ----------------------------- */
 const IMG_ORIGIN = import.meta.env.VITE_IMG_PUBLIC_ORIGIN;
 function cfImg(key: string, w: number, q = 75) {
     return `/cdn-cgi/image/width=${w},quality=${q},format=auto/${IMG_ORIGIN}/${encodeURI(key)}`;
-}
-function rawImgUrl(key: string) {
-    return `/${IMG_ORIGIN}/${encodeURI(key)}`; // full-res, no cf-image transform
 }
 function filenameFromKey(key: string) {
     try {
@@ -75,6 +80,8 @@ export default function Gallery() {
     const isFetchingRef = useRef(false);
     const ioRef = useRef<IntersectionObserver | null>(null);
 
+    const [album, setAlbum] = useState<AlbumId>("album_general");
+
     // Fetch next page (requires cursor !== null)
     async function fetchMore() {
         if (isFetchingRef.current) return;
@@ -84,7 +91,9 @@ export default function Gallery() {
         setLoading(true);
         try {
             const res = await fetch(
-                `/api/gallery?limit=40${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`
+                `/api/gallery?limit=40${
+                    cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""
+                }&album=${encodeURIComponent(album)}`
             );
             const json = await res.json();
 
@@ -115,7 +124,11 @@ export default function Gallery() {
             isFetchingRef.current = true;
             setLoading(true);
             try {
-                const res = await fetch(`/api/gallery?limit=40`);
+                const res = await fetch(
+                    `/api/gallery?limit=40${
+                        cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""
+                    }&album=${encodeURIComponent(album)}`
+                );
                 const json = await res.json();
 
                 const normalized = (json.items as any[]).map((p) => ({
@@ -178,9 +191,23 @@ export default function Gallery() {
                     </p>
 
                     <div className="mt-6 flex items-center gap-3 text-sm text-white/80">
-                        <span className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10">
-                            Shared Album
-                        </span>
+                        <select
+                            className="rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/10"
+                            value={album}
+                            onChange={(e) => {
+                                setItems([]); // reset list
+                                setCursor(null); // reset paging
+                                setInitialLoaded(false);
+                                setAlbum(e.target.value as AlbumId);
+                            }}
+                            aria-label="Choose an album"
+                        >
+                            {ALBUMS.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                    {a.label}
+                                </option>
+                            ))}
+                        </select>
 
                         <button
                             onClick={() => setShowUpload(true)}
@@ -288,29 +315,36 @@ export default function Gallery() {
 
             {/* Upload modal */}
             {showUpload && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Upload photos"
-                    onClick={(e) => {
-                        if (e.currentTarget === e.target) setShowUpload(false);
+                <GalleryUploadInline
+                    albumId={album}
+                    onDone={() => {
+                        setShowUpload(false);
+                        // reload first page for this album
+                        (async () => {
+                            isFetchingRef.current = true;
+                            setLoading(true);
+                            try {
+                                const res = await fetch(
+                                    `/api/gallery?limit=40&album=${encodeURIComponent(album)}`
+                                );
+                                const json = await res.json();
+                                const normalized = (json.items as any[]).map((p) => ({
+                                    key: p.key ?? p.id,
+                                    width: p.width,
+                                    height: p.height,
+                                    caption: p.caption,
+                                    display_name: p.display_name,
+                                }));
+                                setItems(normalized);
+                                setCursor(json.nextCursor || null);
+                                setInitialLoaded(true);
+                            } finally {
+                                setLoading(false);
+                                isFetchingRef.current = false;
+                            }
+                        })();
                     }}
-                >
-                    <div className="w-full max-w-xl rounded-2xl bg-[#203648] p-4 text-[#FAF7EC] shadow-2xl ring-1 ring-white/10">
-                        <div className="mb-3 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Upload photos</h2>
-                            <button
-                                onClick={() => setShowUpload(false)}
-                                className="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                                aria-label="Close upload"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <GalleryUploadInline onDone={() => setShowUpload(false)} />
-                    </div>
-                </div>
+                />
             )}
         </section>
     );

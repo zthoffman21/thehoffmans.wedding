@@ -78,11 +78,11 @@ CREATE TABLE IF NOT EXISTS albums (
   sort_order INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-INSERT OR IGNORE INTO albums(id,slug,title,is_public) VALUES('album_default','shared','Shared Album',1);
+INSERT OR IGNORE INTO albums(id,slug,title,is_public) VALUES('album_general','general','General',1);
 
 CREATE TABLE IF NOT EXISTS photos (
   id TEXT PRIMARY KEY,
-  album_id TEXT REFERENCES albums(id) ON DELETE SET NULL DEFAULT 'album_default',
+  album_id TEXT REFERENCES albums(id) ON DELETE SET NULL DEFAULT 'album_general',
   caption TEXT,
   display_name TEXT,
   width INTEGER, height INTEGER,
