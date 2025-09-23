@@ -18,7 +18,7 @@ export default function PaperCard({
   tapeClass?: string;
   children: React.ReactNode;
 }) {
-  const dot = { accent: "#449cbdff", rose: "#EA6962", sage: "#A7C080" }[accent];
+  const dot = { accent: "#567D9C", rose: "#EA6962", sage: "#A7C080" }[accent];
 
   return (
     <div className="relative">

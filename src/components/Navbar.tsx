@@ -54,7 +54,7 @@ export default function NavBar() {
    before:content-[''] before:absolute before:left-3 before:right-3
    before:top-7 before:h-1 before:rounded
    before:block before:pointer-events-none
-   before:bg-[#449cbdff] 
+   before:bg-[#567D9C] 
    before:opacity-0
    before:shadow-[0_1px_0_rgba(0,0,0,0.06)_inset,0_4px_10px_rgba(0,0,0,0.06)]
    before:transition-all before:duration-200`;
