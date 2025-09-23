@@ -791,6 +791,58 @@ function GalleryTab() {
 
     const [preview, setPreview] = useState<AdminPhoto | null>(null);
 
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+
+    function clearSelection() {
+        setSelected(new Set());
+    }
+    function toggleOne(id: string, checked: boolean) {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (checked) next.add(id);
+            else next.delete(id);
+            return next;
+        });
+    }
+    function toggleAll(checked: boolean) {
+        if (checked) setSelected(new Set(posted.map((p) => p.id)));
+        else clearSelection();
+    }
+
+    useEffect(() => {
+        clearSelection();
+    }, [posted.length]);
+
+    async function onBulkDelete() {
+        if (selected.size === 0) return;
+
+        const msg =
+            selected.size === 1
+                ? "Delete this selected image? This cannot be undone."
+                : `Delete ${selected.size} selected images? This cannot be undone.`;
+        if (!confirm(msg)) return;
+
+        setLoading(true);
+        try {
+            const ids = Array.from(selected);
+            const results = await Promise.allSettled(ids.map((id) => deletePhoto(id)));
+            const okCount = results.filter((r) => r.status === "fulfilled").length;
+            const failCount = results.length - okCount;
+
+            const okIds = new Set(ids.filter((_, i) => results[i].status === "fulfilled"));
+            setPosted((p) => p.filter((x) => !okIds.has(x.id)));
+            clearSelection();
+
+            if (failCount > 0) {
+                alert(`Deleted ${okCount} image(s). ${failCount} failed.`);
+            } else {
+                alert(`Deleted ${okCount} image(s).`);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
     async function refreshPending() {
         const res = await listAdminPhotos("pending", 200);
         setQueue(res.items || []);
@@ -806,6 +858,7 @@ function GalleryTab() {
         try {
             if (mode === "pending") await refreshPending();
             else await refreshPosted();
+            clearSelection();
         } catch (e: any) {
             setErr(e?.message || String(e));
         } finally {
@@ -870,10 +923,26 @@ function GalleryTab() {
         try {
             await deletePhoto(id);
             setPosted((p) => p.filter((x) => x.id !== id));
+            setSelected((prev) => {
+                if (!prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
         } catch (e: any) {
             alert(e?.message || "Delete failed");
         }
     }
+
+    function useIndeterminate(allCount: number, selectedCount: number) {
+        const ref = useRef<HTMLInputElement>(null);
+        useEffect(() => {
+            if (!ref.current) return;
+            ref.current.indeterminate = selectedCount > 0 && selectedCount < allCount;
+        }, [allCount, selectedCount]);
+        return ref;
+    }
+
     async function onSaveSettings() {
         try {
             setSaving(true);
@@ -953,8 +1022,8 @@ function GalleryTab() {
                 </div>
             </div>
 
-            {/* Mode switcher */}
-            <div className="flex items-center justify-between">
+            {/* Mode switcher + actions */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex rounded-xl border overflow-hidden">
                     <button
                         className={`px-3 py-1 text-sm ${
@@ -974,13 +1043,44 @@ function GalleryTab() {
                     </button>
                 </div>
 
-                <button
-                    onClick={refreshActive}
-                    className="rounded-lg border px-3 py-1 text-sm"
-                    title="Refresh"
-                >
-                    Refresh
-                </button>
+                <div className="flex items-center gap-2">
+                    {mode === "posted" && posted.length > 0 && (
+                        <>
+                            <button
+                                className="rounded-lg border px-3 py-1 text-sm"
+                                onClick={() => toggleAll(true)}
+                                disabled={selected.size === posted.length}
+                                title="Select all"
+                            >
+                                Select all
+                            </button>
+                            <button
+                                className="rounded-lg border px-3 py-1 text-sm"
+                                onClick={clearSelection}
+                                disabled={selected.size === 0}
+                                title="Clear selection"
+                            >
+                                Clear
+                            </button>
+                            <button
+                                className="rounded-lg border px-3 py-1 text-sm bg-[#ffe6e6]"
+                                onClick={onBulkDelete}
+                                disabled={selected.size === 0}
+                                title="Delete selected"
+                            >
+                                Delete selected ({selected.size})
+                            </button>
+                        </>
+                    )}
+
+                    <button
+                        onClick={refreshActive}
+                        className="rounded-lg border px-3 py-1 text-sm"
+                        title="Refresh"
+                    >
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             {err && (
@@ -1051,49 +1151,86 @@ function GalleryTab() {
                 <p className="text-ink/60">No posted images yet.</p>
             ) : (
                 <div className="overflow-auto rounded-lg border bg-[#FAF7EC]">
-                    <table className="min-w-[720px] w-full text-sm">
+                    <table className="min-w-[760px] w-full text-sm">
                         <thead className="bg-[#d6d4ca] text-ink/80">
                             <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
+                                {/* NEW: select col */}
+                                <th className="w-[42px]">
+                                    {(() => {
+                                        const ref = useIndeterminate(posted.length, selected.size);
+                                        const allChecked =
+                                            posted.length > 0 && selected.size === posted.length;
+                                        return (
+                                            <input
+                                                ref={ref}
+                                                type="checkbox"
+                                                className="size-4"
+                                                checked={allChecked}
+                                                onChange={(e) => toggleAll(e.target.checked)}
+                                                aria-label="Select all"
+                                            />
+                                        );
+                                    })()}
+                                </th>
                                 <th>Posted</th>
                                 <th>By</th>
                                 <th>Caption</th>
-                                <th className="w-[180px] text-right pr-3">Actions</th>
+                                <th className="w-[220px] text-right pr-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="[&>tr>td]:px-3 [&>tr>td]:py-2 divide-y">
-                            {posted.map((p) => (
-                                <tr key={p.id}>
-                                    <td className="whitespace-nowrap">
-                                        {formatNYDateTime(p.created_at)}
-                                    </td>
-                                    <td
-                                        className="max-w-[220px] truncate"
-                                        title={p.display_name ?? ""}
+                            {posted.map((p) => {
+                                const isChecked = selected.has(p.id);
+                                return (
+                                    <tr
+                                        key={p.id}
+                                        className={isChecked ? "bg-[#efece0]" : undefined}
                                     >
-                                        {p.display_name || "—"}
-                                    </td>
-                                    <td className="max-w-[360px] truncate" title={p.caption ?? ""}>
-                                        {p.caption || "—"}
-                                    </td>
-                                    <td className="text-right">
-                                        <div className="inline-flex gap-2">
-                                            <button
-                                                className="rounded-lg border px-3 py-1"
-                                                onClick={() => setPreview(p)}
-                                            >
-                                                View
-                                            </button>
-                                            <button
-                                                className="rounded-lg border px-3 py-1 bg-[#ffe6e6]"
-                                                onClick={() => onDelete(p.id)}
-                                                title="Delete image"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                        {/* NEW: row checkbox */}
+                                        <td className="align-middle">
+                                            <input
+                                                type="checkbox"
+                                                className="size-4"
+                                                checked={isChecked}
+                                                onChange={(e) => toggleOne(p.id, e.target.checked)}
+                                                aria-label="Select row"
+                                            />
+                                        </td>
+                                        <td className="whitespace-nowrap">
+                                            {formatNYDateTime(p.created_at)}
+                                        </td>
+                                        <td
+                                            className="max-w-[220px] truncate"
+                                            title={p.display_name ?? ""}
+                                        >
+                                            {p.display_name || "—"}
+                                        </td>
+                                        <td
+                                            className="max-w-[360px] truncate"
+                                            title={p.caption ?? ""}
+                                        >
+                                            {p.caption || "—"}
+                                        </td>
+                                        <td className="text-right">
+                                            <div className="inline-flex gap-2">
+                                                <button
+                                                    className="rounded-lg border px-3 py-1"
+                                                    onClick={() => setPreview(p)}
+                                                >
+                                                    View
+                                                </button>
+                                                <button
+                                                    className="rounded-lg border px-3 py-1 bg-[#ffe6e6]"
+                                                    onClick={() => onDelete(p.id)}
+                                                    title="Delete image"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
