@@ -809,9 +809,18 @@ function GalleryTab() {
         else clearSelection();
     }
 
+    const masterRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if (!masterRef.current) return;
+        masterRef.current.indeterminate = selected.size > 0 && selected.size < posted.length;
+    }, [selected.size, posted.length]);
+
     useEffect(() => {
         clearSelection();
     }, [posted.length]);
+    useEffect(() => {
+        if (mode !== "posted") clearSelection();
+    }, [mode]);
 
     async function onBulkDelete() {
         if (selected.size === 0) return;
@@ -932,15 +941,6 @@ function GalleryTab() {
         } catch (e: any) {
             alert(e?.message || "Delete failed");
         }
-    }
-
-    function useIndeterminate(allCount: number, selectedCount: number) {
-        const ref = useRef<HTMLInputElement>(null);
-        useEffect(() => {
-            if (!ref.current) return;
-            ref.current.indeterminate = selectedCount > 0 && selectedCount < allCount;
-        }, [allCount, selectedCount]);
-        return ref;
     }
 
     async function onSaveSettings() {
@@ -1154,23 +1154,17 @@ function GalleryTab() {
                     <table className="min-w-[760px] w-full text-sm">
                         <thead className="bg-[#d6d4ca] text-ink/80">
                             <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
-                                {/* NEW: select col */}
                                 <th className="w-[42px]">
-                                    {(() => {
-                                        const ref = useIndeterminate(posted.length, selected.size);
-                                        const allChecked =
-                                            posted.length > 0 && selected.size === posted.length;
-                                        return (
-                                            <input
-                                                ref={ref}
-                                                type="checkbox"
-                                                className="size-4"
-                                                checked={allChecked}
-                                                onChange={(e) => toggleAll(e.target.checked)}
-                                                aria-label="Select all"
-                                            />
-                                        );
-                                    })()}
+                                    <input
+                                        ref={masterRef}
+                                        type="checkbox"
+                                        className="size-4"
+                                        checked={
+                                            posted.length > 0 && selected.size === posted.length
+                                        }
+                                        onChange={(e) => toggleAll(e.target.checked)}
+                                        aria-label="Select all"
+                                    />
                                 </th>
                                 <th>Posted</th>
                                 <th>By</th>
