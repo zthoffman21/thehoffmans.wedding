@@ -29,6 +29,7 @@ export default function GalleryUploadInline({
     const [busy, setBusy] = useState(false);
     const [progress, setProgress] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -119,16 +120,22 @@ export default function GalleryUploadInline({
 
             setProgress(100);
             setBusy(false);
-            alert(conf.status === "approved" ? "Uploaded! 🎉" : "Uploaded! Pending approval.");
+            setNotice({
+                kind: "success",
+                text: conf.status === "approved" ? "Uploaded! 🎉" : "Uploaded! Pending approval.",
+            });
             setFiles(null);
             setName("");
             setCaption("");
-            setTimeout(() => setProgress(0), 800);
+            setTimeout(() => {
+                setProgress(0);
+                setNotice(null);
+            }, 4000);
             onDone?.();
         } catch (err: any) {
             setBusy(false);
             setError(err?.message || String(err));
-            console.error(err);
+            setNotice({ kind: "error", text: err?.message || String(err) });
         }
     }
 
@@ -161,7 +168,19 @@ export default function GalleryUploadInline({
                 {busy ? `Uploading… ${progress}%` : "Upload"}
             </button>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div aria-live="polite" role="status" className="min-h-[1.25rem]">
+                {notice && (
+                    <p
+                        className={
+                            notice.kind === "success"
+                                ? "mt-2 inline-block rounded-md bg-green-100 px-2 py-1 text-sm text-green-900"
+                                : "mt-2 inline-block rounded-md bg-red-100 px-2 py-1 text-sm text-red-900"
+                        }
+                    >
+                        {notice.text}
+                    </p>
+                )}
+            </div>
         </form>
     );
 }
