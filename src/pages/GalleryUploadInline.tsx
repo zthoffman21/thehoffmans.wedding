@@ -28,12 +28,10 @@ export default function GalleryUploadInline({
     const [caption, setCaption] = useState("");
     const [busy, setBusy] = useState(false);
     const [progress, setProgress] = useState<number>(0);
-    const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        setError(null);
         if (!files?.length) return;
 
         try {
@@ -130,11 +128,10 @@ export default function GalleryUploadInline({
             setTimeout(() => {
                 setProgress(0);
                 setNotice(null);
-            }, 4000);
+            }, 20000);
             onDone?.();
         } catch (err: any) {
             setBusy(false);
-            setError(err?.message || String(err));
             setNotice({ kind: "error", text: err?.message || String(err) });
         }
     }
