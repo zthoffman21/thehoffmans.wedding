@@ -128,8 +128,8 @@ export default function GalleryUploadInline({
             setTimeout(() => {
                 setProgress(0);
                 setNotice(null);
-            }, 20000);
-            onDone?.();
+	            onDone?.();
+            }, 5000);
         } catch (err: any) {
             setBusy(false);
             setNotice({ kind: "error", text: err?.message || String(err) });
