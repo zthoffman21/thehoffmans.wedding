@@ -78,7 +78,13 @@ CREATE TABLE IF NOT EXISTS albums (
   sort_order INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-INSERT OR IGNORE INTO albums(id,slug,title,is_public) VALUES('album_general','general','General',1);
+INSERT OR IGNORE INTO albums(id,slug,title,is_public) VALUES
+('album_general','general','General',1),
+('album_ceremony', 'ceremony','Ceremony',1),
+('album_reception', 'reception', 'Reception',1),
+('album_friends_family', 'friendsandfamily', 'Friends & Family',1),
+('album_details', 'albumanddecor', 'Details & Decor',1),
+('album_party', 'party', 'Dance Floor / Party',1);
 
 CREATE TABLE IF NOT EXISTS photos (
   id TEXT PRIMARY KEY,

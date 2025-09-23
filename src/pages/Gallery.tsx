@@ -235,7 +235,11 @@ export default function Gallery() {
                             aria-label="Choose an album"
                         >
                             {ALBUMS.map((a) => (
-                                <option className="text-[#203648] bg-[#FAF7EC]" key={a.id} value={a.id}>
+                                <option
+                                    className="text-[#203648] bg-[#FAF7EC]"
+                                    key={a.id}
+                                    value={a.id}
+                                >
                                     {a.label}
                                 </option>
                             ))}
@@ -348,38 +352,26 @@ export default function Gallery() {
             {/* Upload modal */}
             {showUpload && (
                 <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-                    aria-modal="true"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
                     role="dialog"
+                    aria-modal="true"
+                    aria-label="Upload photos"
+                    onClick={(e) => {
+                        if (e.currentTarget === e.target) setShowUpload(false);
+                    }}
                 >
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                        onClick={() => setShowUpload(false)}
-                    />
-                    {/* Panel */}
-                    <div className="relative z-[61] w-full max-w-md rounded-2xl border bg-[#FAF7EC] p-4 shadow-xl">
-                        <div className="mb-2 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-ink">Add photos</h2>
+                    <div className="w-full max-w-xl rounded-2xl bg-[#203648] p-4 text-[#FAF7EC] shadow-2xl ring-1 ring-white/10">
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Upload photos</h2>
                             <button
                                 onClick={() => setShowUpload(false)}
-                                className="rounded-md border px-2 py-1 text-sm"
+                                className="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                                aria-label="Close upload"
                             >
-                                Close
+                                ✕
                             </button>
                         </div>
-                        <GalleryUploadInline
-                            albumId={album}
-                            onDone={() => {
-                                setShowUpload(false);
-                                // Optional: refresh first page so newly-approved (auto) items show
-                                setItems([]);
-                                setCursor(null);
-                                setInitialLoaded(false);
-                                // the [album]-effect above will refetch
-                                setAlbum((a) => a);
-                            }}
-                        />
+                        <GalleryUploadInline onDone={() => setShowUpload(false)} />
                     </div>
                 </div>
             )}
