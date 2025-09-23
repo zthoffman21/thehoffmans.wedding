@@ -371,7 +371,7 @@ export default function Gallery() {
                                 ✕
                             </button>
                         </div>
-                        <GalleryUploadInline onDone={() => setShowUpload(false)} />
+                        <GalleryUploadInline albumId={album} onDone={() => setShowUpload(false)} />
                     </div>
                 </div>
             )}
