@@ -1,12 +1,219 @@
 /// <reference types="@cloudflare/workers-types" />
 import { json, RSVPSubmissionSchema, newId, type Env } from "../../_utils";
+import { sendEmail } from "../../email";
+
+type MemberRSVP = {
+    memberId: string;
+    attending: { ceremony: boolean | null; reception: boolean | null };
+    dietary?: string | undefined;
+    notes?: string | undefined;
+};
+
+type RSVPEmailPayload = {
+    partyName: string;
+    submissionId?: string;
+    submittedAt?: string; // ISO or "YYYY-MM-DD HH:MM:SS"
+    contactEmail?: string | null;
+    contactPhone?: string | null;
+    notes?: string | null; // party-level notes
+    members: MemberRSVP[];
+};
+
+function escapeHtml(s: unknown): string {
+    return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function fmtNY(dt?: string) {
+    if (!dt) return new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+    const d = new Date(dt.replace(" ", "T").replace(/Z?$/, "Z")); // tolerate DB timestamp
+    return isNaN(+d)
+        ? new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
+        : d.toLocaleString("en-US", { timeZone: "America/New_York" });
+}
+
+function dotTag(text: string) {
+    return `<span style="display:inline-block;background:#f0efe6;border:1px solid #e3e0d1;border-radius:999px;padding:2px 8px;font-size:12px;margin-right:6px;">${escapeHtml(
+        text
+    )}</span>`;
+}
+
+function attendanceChips(m: MemberRSVP) {
+    const chips: string[] = [];
+    const hasMulti =
+        typeof m.attending.ceremony === "boolean" || typeof m.attending.reception === "boolean";
+    if (hasMulti) {
+        if (m.attending.ceremony === true) chips.push(dotTag("Ceremony ✓"));
+        else if (m.attending.ceremony === false) chips.push(dotTag("Ceremony ✗"));
+        if (m.attending.reception === true) chips.push(dotTag("Reception ✓"));
+        else if (m.attending.reception === false) chips.push(dotTag("Reception ✗"));
+    } else if (typeof m.attending === "boolean") {
+        chips.push(dotTag(m.attending ? "Attending ✓" : "Not attending ✗"));
+    }
+}
+
+function summarizeCounts(members: MemberRSVP[]) {
+    const c = {
+        total: members.length,
+        ceremonyYes: members.filter((x) => x.attending.ceremony === true).length,
+        receptionYes: members.filter((x) => x.attending.reception === true).length,
+        dietary: members.filter((x) => (x.dietary ?? "").trim().length > 0).length,
+        notes: members.filter((x) => (x.notes ?? "").trim().length > 0).length,
+    };
+    return c;
+}
+
+export function renderRSVPEmailHTML(payload: RSVPEmailPayload, adminUrl: string, csvUrl: string) {
+    const { partyName, submissionId, submittedAt, contactEmail, contactPhone, notes, members } =
+        payload;
+    const counts = summarizeCounts(members);
+    const headerSub = [
+        submissionId ? `Submission ID: ${escapeHtml(submissionId)}` : null,
+        `${fmtNY(submittedAt)} (ET)`,
+    ]
+        .filter(Boolean)
+        .join(" • ");
+
+    const summaryLine = (() => {
+        const hasMulti = members.some(
+            (m) =>
+                typeof m.attending.ceremony === "boolean" ||
+                typeof m.attending.reception === "boolean"
+        );
+        if (hasMulti) {
+            return `<b>${counts.total}</b> member${counts.total === 1 ? "" : "s"} • Ceremony: <b>${
+                counts.ceremonyYes
+            }</b> ✓ • Reception: <b>${counts.receptionYes}</b> ✓`;
+        }
+        return `<b>${counts.total}</b> member${counts.total === 1 ? "" : "s"}`;
+    })();
+
+    const contactBits = [
+        contactEmail ? `Email: ${escapeHtml(contactEmail)}` : null,
+        contactPhone ? `Phone: ${escapeHtml(contactPhone)}` : null,
+    ]
+        .filter(Boolean)
+        .join(" • ");
+
+    const memberRows = members
+        .map((m) => {
+            const name = escapeHtml(m.memberId);
+            const chips = attendanceChips(m);
+            const dietary = (m.dietary ?? "").trim();
+            const notes = (m.notes ?? "").trim();
+            const extra = [
+                dietary
+                    ? `<div style="color:#5b5b5b;margin-top:3px;"><b>Dietary:</b> ${escapeHtml(
+                          dietary
+                      )}</div>`
+                    : "",
+                notes
+                    ? `<div style="color:#5b5b5b;margin-top:3px;"><b>Notes:</b> ${escapeHtml(
+                          notes
+                      )}</div>`
+                    : "",
+            ].join("");
+            return `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;">
+          <div style="font-size:14px;line-height:1.35;">
+            <div><b>${name}</b></div>
+            ${extra}
+          </div>
+        </td>
+      </tr>
+    `;
+        })
+        .join("");
+
+    return `
+  <div style="background:#f6f5ef;padding:24px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:14px;padding:24px;border:1px solid #e7e4d8;">
+            <tr>
+              <td>
+                <h2 style="margin:0 0 6px 0;font:600 20px ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;">New RSVP Received</h2>
+                <div style="color:#666;font-size:12px;margin-bottom:16px;">${escapeHtml(
+                    headerSub
+                )}</div>
+
+                <div style="font-size:16px;margin-bottom:6px;"><b>${escapeHtml(partyName)}</b></div>
+                ${
+                    contactBits
+                        ? `<div style="color:#555;font-size:13px;margin-bottom:10px;">${contactBits}</div>`
+                        : ""
+                }
+
+                <div style="font-size:14px;margin:10px 0 14px 0;">${summaryLine}
+                  ${counts.dietary ? ` • Dietary entries: <b>${counts.dietary}</b>` : ""}
+                  ${counts.notes ? ` • Member notes: <b>${counts.notes}</b>` : ""}
+                </div>
+
+                ${
+                    notes
+                        ? `
+                  <div style="background:#faf7ec;border:1px solid #eee8d5;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px;">
+                    <b>Party Notes:</b> ${escapeHtml(notes)}
+                  </div>`
+                        : ""
+                }
+
+                <div style="height:1px;background:#eee;margin:14px 0;"></div>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  ${memberRows}
+                </table>
+
+                <div style="height:1px;background:#eee;margin:18px 0;"></div>
+
+                <!-- Buttons -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left" style="margin:0 -6px;">
+                  <tr>
+                    <td style="padding:6px;">
+                      <a href="${escapeHtml(adminUrl)}"
+                        style="display:inline-block;background:#111;color:#fff;text-decoration:none;
+                               padding:12px 18px;border-radius:10px;font-weight:600;">
+                        Review in Admin
+                      </a>
+                    </td>
+                    <td style="padding:6px;">
+                      <a href="${escapeHtml(csvUrl)}"
+                        style="display:inline-block;background:#155e75;color:#fff;text-decoration:none;
+                               padding:12px 18px;border-radius:10px;font-weight:600;">
+                        Export to CSV
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="clear:both;"></div>
+
+                <div style="color:#999;font-size:12px;margin-top:18px;">
+                  This is an automated notification from thehoffmans.wedding
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div style="color:#999;font-size:11px;margin-top:10px;">Email ID: ${escapeHtml(
+              (globalThis as any).crypto?.randomUUID?.() ?? ""
+          )}</div>
+        </td>
+      </tr>
+    </table>
+  </div>`;
+}
 
 export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }) => {
-    // Wrap everything so we never return a bare 500
     try {
-        const rawId = String(params.id); // could be "3" or "p_avery"
+        const rawId = String(params.id);
 
-        // Resolve party by id OR slug, return canonical numeric/text id
         const party = await env.DB.prepare(
             `
         SELECT id, display_name, can_rsvp, rsvp_deadline
@@ -50,7 +257,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
             if (prior?.submission_id) return json({ ok: true, submissionId: prior.submission_id });
         }
 
-        // Validate members belong to this party (prevents FK/500s)
         const memberIds = parsed.data.members.map((m) => m.memberId);
         if (memberIds.length === 0) return json({ error: "members[] required" }, 400);
 
@@ -95,7 +301,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                 party.id,
                 parsed.data.contact?.email ?? null,
                 parsed.data.contact?.phone ?? null,
-                parsed.data.reminderOptIn?? null,
+                parsed.data.reminderOptIn ?? null,
                 payloadJson
             )
         );
@@ -120,7 +326,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                     m.attending.ceremony === null ? null : m.attending.ceremony ? 1 : 0,
                     m.attending.reception === null ? null : m.attending.reception ? 1 : 0,
                     m.dietary ?? null,
-                    m.notes   ?? null
+                    m.notes ?? null
                 )
             );
         }
@@ -147,6 +353,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
 
         // Execute atomically (works local + remote)
         await env.DB.batch(stmts);
+
+        const adminUrl = "https://thehoffmans.wedding/admin";
+        const csvUrl = "https://thehoffmans.wedding/api/admin/export";
+
+        const html = renderRSVPEmailHTML(
+            {
+                partyName: party.display_name,
+                submissionId: submissionId,
+                contactEmail: contactEmail,
+                contactPhone: contactEmail,
+                members: parsed.data.members,
+            },
+            adminUrl,
+            csvUrl
+        );
+
+        await sendEmail(env, {
+            to: env.EMAIL_ADMIN_TO,
+            subject: `New RSVP: ${party.display_name}`,
+            html,
+        });
 
         return json({ ok: true, submissionId });
     } catch (err: any) {

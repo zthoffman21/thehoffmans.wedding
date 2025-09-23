@@ -115,7 +115,7 @@ INSERT OR IGNORE INTO settings(key, value) VALUES
   ('purge_rejected_uploads', '1');
 
 
-  CREATE TABLE IF NOT EXISTS email_usage (
+CREATE TABLE IF NOT EXISTS email_usage (
   ym TEXT PRIMARY KEY,
   count INTEGER NOT NULL DEFAULT 0
 );
