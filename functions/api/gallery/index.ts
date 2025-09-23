@@ -9,8 +9,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
     const album = url.searchParams.get("album"); // "album_general" | etc. | null
     const albumFilter = album && album !== "all" ? " AND album_id = ? " : "";
 
+    // ...same imports etc.
+
     const baseSql = `
-  SELECT id, caption, display_name, width, height, created_at
+  SELECT
+    id,
+    caption,
+    display_name,
+    width,
+    height,
+    -- return ISO-8601 UTC like "2025-09-23T04:46:00Z"
+    strftime('%Y-%m-%dT%H:%M:%SZ', created_at) AS created_at
   FROM photos
   WHERE status='approved' AND is_public=1
   ${albumFilter}
@@ -21,17 +30,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
         const [cTime, cId] = cursor.split("|");
         rows = await env.DB.prepare(
             `${baseSql}
-   AND (created_at < ? OR (created_at = ? AND id < ?))
-   ORDER BY created_at DESC, id DESC
-   LIMIT ?`
+     AND (datetime(created_at) < datetime(?) OR (datetime(created_at) = datetime(?) AND id < ?))
+     ORDER BY created_at DESC, id DESC
+     LIMIT ?`
         )
             .bind(...(album && album !== "all" ? [album] : []), cTime, cTime, cId, limit)
             .all();
     } else {
         rows = await env.DB.prepare(
             `${baseSql}
-   ORDER BY created_at DESC, id DESC
-   LIMIT ?`
+     ORDER BY created_at DESC, id DESC
+     LIMIT ?`
         )
             .bind(...(album && album !== "all" ? [album] : []), limit)
             .all();
