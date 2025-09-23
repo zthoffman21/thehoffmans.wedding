@@ -46,7 +46,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, request }) => {
       return json({ ok: false, message: "Expected application/json" }, { status: 400 });
     }
 
-    // NEW: apply rate limit BEFORE granting presigned URLs
     const rl = await rateLimit(env, request, { windowMins: 60 });
     if (!rl.ok) {
       return json({ ok: false, message: "Rate limit exceeded. Please try again later." }, { status: rl.status });

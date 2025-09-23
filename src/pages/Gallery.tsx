@@ -167,7 +167,7 @@ export default function Gallery() {
         >
             {/* Sticky header */}
             <header
-                className="sticky top-0 z-30 -mx-[var(--container-px,0)] mb-8
+                className="sticky -top-19 z-30 -mx-[var(--container-px,0)] mb-8
              bg-transparent px-[var(--container-px,1rem)] py-6 backdrop-blur"
             >
                 <div className="mx-auto flex max-w-5xl flex-col items-center text-center text-[#F2EFE7]">
