@@ -6,14 +6,6 @@ export type ReminderSend = {
     days_out: string;
     html_content_index: number;
 };
-export type ReminderLogRow = {
-    id: string;
-    reminder_title: string;
-    email: string;
-    ymd: string;
-    kind: string;
-    created_at: string;
-};
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
     const rows = await env.DB.prepare(
