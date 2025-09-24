@@ -12,6 +12,9 @@ DROP TABLE IF EXISTS photos;
 DROP TABLE IF EXISTS albums;
 DROP TABLE IF EXISTS settings;
 
+DROP TABLE IF EXISTS reminder_sends;
+DROP TABLE IF EXISTS reminder_log;
+
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
@@ -123,13 +126,14 @@ CREATE TABLE IF NOT EXISTS reminder_sends (
   reminder_title TEXT PRIMARY KEY,
   send_date DATETIME,
   days_out INTEGER,
-  status TEXT NOT NULL DEFAULT 'scheduled',
   html_content_index INTEGER NOT NULL
 );
-INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, status, html_content_index) VALUES
-  ('RSVP Reminder 30 Days', NULL, 30, 'scheduled', 1),
-  ('RSVP Reminder 7 Days', NULL, 7, 'scheduled', 2),
-  ('RSVP Reminder 1 Day', NULL, 1, 'scheduled', 3);
+INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, html_content_index) VALUES
+  ('TEST: Set Day', '2025-09-17T05:14:25.000Z', NULL, 3),
+  ('TEST: Days Out', NULL, 1, 3);
+  -- ('RSVP Reminder 30 Days', NULL, 30, 1),
+  -- ('RSVP Reminder 7 Days', NULL, 7, 2),
+  -- ('RSVP Reminder 1 Day', NULL, 1, 3);
 
 CREATE TABLE IF NOT EXISTS reminder_log (
   id              TEXT PRIMARY KEY,
