@@ -249,7 +249,7 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
                 const deadline = toDate(c.rsvp_deadline);
                 if (!deadline) continue;
                 const delta = daysUntil(deadline, now);
-                if (delta === r.days_out) dueToday.push(c);
+                if (r.days_out != null && delta <= r.days_out) dueToday.push(c);
             }
 
             if (dueToday.length) {
