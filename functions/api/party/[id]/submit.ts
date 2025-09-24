@@ -362,7 +362,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                 partyName: party.display_name,
                 submissionId: submissionId,
                 contactEmail: contactEmail,
-                contactPhone: contactEmail,
+                contactPhone: contactPhone,
                 members: parsed.data.members,
             },
             adminUrl,
