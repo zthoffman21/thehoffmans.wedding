@@ -351,7 +351,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
             ).bind(contactEmail, contactPhone, reminderOptIn, party.id)
         );
 
-        // Execute atomically (works local + remote)
         await env.DB.batch(stmts);
 
         const adminUrl = "https://thehoffmans.wedding/admin";

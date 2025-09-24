@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { searchParties as apiSearchParties } from "../../api/rsvp";
 import { formatNYDateTime } from "../../lib/time";
+import React from "react";
 
 /* =========================================================================
    Types shared by tabs
@@ -150,6 +151,81 @@ async function deletePhoto(id: string) {
     return asJson<{ ok: true }>(res);
 }
 
+type ReminderSend = {
+    reminder_title: string;
+    send_date: string | null;
+    days_out: number | null;
+    html_content_index: number;
+};
+
+type ReminderLogRow = {
+    id: string;
+    reminder_title: string;
+    email: string;
+    ymd: string;
+    kind: "ABSOLUTE" | "DAYS_OUT";
+    created_at: string;
+};
+async function listReminders(): Promise<{ ok: true; items: ReminderSend[] }> {
+    const res = await fetch("/api/admin/reminders", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to load reminders");
+    return res.json();
+}
+async function upsertReminder(row: ReminderSend, original_title?: string) {
+    // If renaming, use PATCH on specific title; otherwise POST
+    if (original_title && original_title !== row.reminder_title) {
+        const res = await fetch(`/api/admin/reminders/${encodeURIComponent(original_title)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(row),
+        });
+        const data = await res.json();
+        if (!res.ok || data?.ok === false) throw new Error(data?.error || "Save failed");
+        return data;
+    }
+    // Upsert by POST; server will INSERT OR REPLACE on reminder_title
+    const res = await fetch("/api/admin/reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row),
+    });
+    const data = await res.json();
+    if (!res.ok || data?.ok === false) throw new Error(data?.error || "Save failed");
+    return data;
+}
+async function deleteReminder(title: string) {
+    const res = await fetch(`/api/admin/reminders/${encodeURIComponent(title)}`, {
+        method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok || data?.ok === false) throw new Error(data?.error || "Delete failed");
+    return data;
+}
+async function listReminderLogs(params: {
+    reminder?: string;
+    ymd?: string;
+    email?: string;
+    limit?: number;
+    cursor?: string;
+}) {
+    const url = new URL("/api/admin/reminder-log", location.origin);
+    if (params.reminder) url.searchParams.set("reminder", params.reminder);
+    if (params.ymd) url.searchParams.set("ymd", params.ymd);
+    if (params.email) url.searchParams.set("email", params.email);
+    if (params.limit) url.searchParams.set("limit", String(params.limit));
+    if (params.cursor) url.searchParams.set("cursor", params.cursor);
+    const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+    });
+    const data = await res.json();
+    if (!res.ok || data?.ok === false) throw new Error(data?.error || "Log load failed");
+    return data as { ok: true; items: ReminderLogRow[]; nextCursor?: string | null };
+}
+
 /* =========================================================================
    Image URL helper for previews
    ========================================================================= */
@@ -164,9 +240,9 @@ function cfImg(key: string, w: number, q = 75) {
    ========================================================================= */
 
 export default function AdminDashboard() {
-    const [tab, setTab] = useState<"overview" | "submissions" | "missing" | "manage" | "gallery">(
-        "overview"
-    );
+    const [tab, setTab] = useState<
+        "overview" | "submissions" | "missing" | "manage" | "gallery" | "reminders"
+    >("overview");
 
     return (
         <section className="relative min-h-screen bg-[#F2EFE7] overflow-x-hidden">
@@ -192,17 +268,19 @@ export default function AdminDashboard() {
                     className="mb-6 flex gap-2 overflow-x-auto whitespace-nowrap -mx-4 px-4
              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
-                    {["overview", "submissions", "missing", "manage", "gallery"].map((t) => (
-                        <button
-                            key={t}
-                            onClick={() => setTab(t as any)}
-                            className={`rounded-xl border px-3 py-1 ${
-                                tab === t ? "bg-ink text-[#FAF7EC]" : "bg-[#FAF7EC]"
-                            }`}
-                        >
-                            {t[0].toUpperCase() + t.slice(1)}
-                        </button>
-                    ))}
+                    {["overview", "submissions", "missing", "manage", "gallery", "reminders"].map(
+                        (t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTab(t as any)}
+                                className={`rounded-xl border px-3 py-1 ${
+                                    tab === t ? "bg-ink text-[#FAF7EC]" : "bg-[#FAF7EC]"
+                                }`}
+                            >
+                                {t[0].toUpperCase() + t.slice(1)}
+                            </button>
+                        )
+                    )}
                     <a
                         className="ml-auto rounded-xl border px-3 py-1"
                         href="/api/admin/export/latest-rsvps"
@@ -216,6 +294,7 @@ export default function AdminDashboard() {
                 {tab === "missing" && <Missing />}
                 {tab === "manage" && <Manage />}
                 {tab === "gallery" && <GalleryTab />}
+                {tab === "reminders" && <RemindersTab />}
             </section>
         </section>
     );
@@ -1414,5 +1493,369 @@ function SelectYN({
             <option value="1">Yes</option>
             <option value="0">No</option>
         </select>
+    );
+}
+
+function RemindersTab() {
+    const [items, setItems] = React.useState<ReminderSend[]>([]);
+    const [loading, setLoading] = React.useState(false);
+    const [err, setErr] = React.useState<string | null>(null);
+
+    // editor state for new/edit row
+    const empty: ReminderSend = {
+        reminder_title: "",
+        send_date: null,
+        days_out: null,
+        html_content_index: 0,
+    };
+    const [draft, setDraft] = React.useState<ReminderSend>({ ...empty });
+    const [editing, setEditing] = React.useState<string | null>(null); // title being edited
+
+    // log viewer state
+    const [logReminder, setLogReminder] = React.useState<string>("");
+    const [logYmd, setLogYmd] = React.useState<string>("");
+    const [logEmail, setLogEmail] = React.useState<string>("");
+    const [logs, setLogs] = React.useState<ReminderLogRow[]>([]);
+    const [logCursor, setLogCursor] = React.useState<string | null>(null);
+    const [logLoading, setLogLoading] = React.useState(false);
+
+    async function refresh() {
+        setLoading(true);
+        setErr(null);
+        try {
+            const res = await listReminders();
+            setItems(res.items);
+        } catch (e: any) {
+            setErr(e?.message || String(e));
+        } finally {
+            setLoading(false);
+        }
+    }
+    React.useEffect(() => {
+        refresh();
+    }, []);
+
+    function onChangeField<K extends keyof ReminderSend>(key: K, val: ReminderSend[K]) {
+        setDraft((d) => ({ ...d, [key]: val } as ReminderSend));
+    }
+    function exclusiveModeGuard(d: ReminderSend): string | null {
+        const hasDate = !!d.send_date && d.send_date.trim() !== "";
+        const hasDays =
+            d.days_out !== null && d.days_out !== undefined && !Number.isNaN(d.days_out);
+        if (hasDate && hasDays) return "Choose either a fixed send date OR days_out, not both.";
+        if (!hasDate && !hasDays) return "Provide a send date OR a days_out value.";
+        return null;
+    }
+
+    async function saveDraft() {
+        const errMsg = exclusiveModeGuard(draft);
+        if (errMsg) {
+            alert(errMsg);
+            return;
+        }
+
+        const payload: ReminderSend = {
+            reminder_title: draft.reminder_title.trim(),
+            send_date: draft.send_date && draft.send_date.trim() !== "" ? draft.send_date : null,
+            days_out:
+                draft.days_out === null ||
+                draft.days_out === undefined ||
+                draft.days_out === ("" as any)
+                    ? null
+                    : Number(draft.days_out),
+            html_content_index: Number(draft.html_content_index || 0),
+        };
+        if (!payload.reminder_title) {
+            alert("Title is required");
+            return;
+        }
+        if (payload.days_out !== null && !Number.isFinite(payload.days_out)) {
+            alert("days_out must be a number");
+            return;
+        }
+
+        try {
+            await upsertReminder(payload, editing || undefined);
+            setDraft({ ...empty });
+            setEditing(null);
+            await refresh();
+        } catch (e: any) {
+            alert(e?.message || "Save failed");
+        }
+    }
+
+    function editRow(r: ReminderSend) {
+        setEditing(r.reminder_title);
+        setDraft({ ...r });
+    }
+    function cancelEdit() {
+        setEditing(null);
+        setDraft({ ...empty });
+    }
+
+    async function remove(title: string) {
+        if (!confirm(`Delete reminder "${title}"?`)) return;
+        try {
+            await deleteReminder(title);
+            await refresh();
+        } catch (e: any) {
+            alert(e?.message || "Delete failed");
+        }
+    }
+
+    async function loadLogs(reset = true) {
+        setLogLoading(true);
+        try {
+            const res = await listReminderLogs({
+                reminder: logReminder || undefined,
+                ymd: logYmd || undefined,
+                email: logEmail || undefined,
+                limit: 50,
+                cursor: reset ? undefined : logCursor || undefined,
+            });
+            setLogs((prev) => (reset ? res.items : [...prev, ...res.items]));
+            setLogCursor(res.nextCursor ?? null);
+        } catch (e: any) {
+            alert(e?.message || "Failed to load logs");
+        } finally {
+            setLogLoading(false);
+        }
+    }
+    return (
+        <div className="space-y-6">
+            <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Reminders</h2>
+                    <button
+                        className="rounded-lg border px-3 py-1"
+                        onClick={refresh}
+                        disabled={loading}
+                    >
+                        {loading ? "Refreshing…" : "Refresh"}
+                    </button>
+                </div>
+
+                <div className="overflow-auto rounded-lg border">
+                    <table className="min-w-[860px] w-full text-sm">
+                        <thead className="bg-[#d6d4ca] text-ink/80">
+                            <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
+                                <th>Title</th>
+                                <th>Send date (ISO)</th>
+                                <th>Days out</th>
+                                <th>Template</th>
+                                <th className="w-[220px] text-right pr-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="[&>tr>td]:px-3 [&>tr>td]:py-2 divide-y">
+                            {items.map((r) => (
+                                <tr key={r.reminder_title}>
+                                    <td className="max-w-[260px] truncate" title={r.reminder_title}>
+                                        {r.reminder_title}
+                                    </td>
+                                    <td className="whitespace-nowrap">{r.send_date ?? "—"}</td>
+                                    <td>{r.days_out ?? "—"}</td>
+                                    <td>#{r.html_content_index}</td>
+                                    <td className="text-right">
+                                        <div className="inline-flex gap-2">
+                                            <button
+                                                className="rounded-lg border px-3 py-1"
+                                                onClick={() => editRow(r)}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                className="rounded-lg border px-3 py-1 bg-[#ffe6e6]"
+                                                onClick={() => remove(r.reminder_title)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {items.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="py-6 text-center text-ink/60">
+                                        No reminders defined.
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* Editor row */}
+                            <tr className="bg-white/70">
+                                <td>
+                                    <input
+                                        className="w-full rounded border bg-white px-2 py-1"
+                                        value={draft.reminder_title}
+                                        onChange={(e) =>
+                                            onChangeField("reminder_title", e.target.value)
+                                        }
+                                        placeholder="Title (email subject)"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        className="w-full rounded border bg-white px-2 py-1"
+                                        value={draft.send_date ?? ""}
+                                        onChange={(e) => onChangeField("send_date", e.target.value)}
+                                        placeholder="YYYY-MM-DDTHH:mm:ssZ"
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        className="w-full rounded border bg-white px-2 py-1"
+                                        value={draft.days_out ?? ""}
+                                        onChange={(e) =>
+                                            onChangeField(
+                                                "days_out",
+                                                (e.target.value === ""
+                                                    ? null
+                                                    : Number(e.target.value)) as any
+                                            )
+                                        }
+                                        placeholder="e.g. 14"
+                                    />
+                                </td>
+                                <td>
+                                    <select
+                                        className="w-full rounded border bg-white px-2 py-1"
+                                        value={String(draft.html_content_index)}
+                                        onChange={(e) =>
+                                            onChangeField(
+                                                "html_content_index",
+                                                Number(e.target.value) as any
+                                            )
+                                        }
+                                    >
+                                        <option value="0">Template #0 – Simple RSVP nudge</option>
+                                        <option value="1">Template #1 – Deadline coming up</option>
+                                        <option value="2">Template #2 – Generic update</option>
+                                    </select>
+                                </td>
+                                <td className="text-right">
+                                    <div className="inline-flex gap-2">
+                                        {editing && (
+                                            <button
+                                                className="rounded-lg border px-3 py-1"
+                                                onClick={cancelEdit}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                        <button
+                                            className="rounded-lg bg-ink/90 px-3 py-1 text-ink"
+                                            onClick={saveDraft}
+                                        >
+                                            {editing ? "Save" : "Add"}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p className="mt-2 text-xs text-ink/60">
+                    Exactly one of <code>send_date</code> (absolute) or <code>days_out</code>{" "}
+                    (relative to each party's deadline) must be set.
+                </p>
+            </div>
+
+            {/* Email log viewer */}
+            <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Email log</h2>
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="rounded-lg border px-3 py-1"
+                            onClick={() => {
+                                setLogs([]);
+                                setLogCursor(null);
+                                loadLogs(true);
+                            }}
+                            disabled={logLoading}
+                        >
+                            Filter
+                        </button>
+                        {logCursor && (
+                            <button
+                                className="rounded-lg border px-3 py-1"
+                                onClick={() => loadLogs(false)}
+                                disabled={logLoading}
+                            >
+                                Load more
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                    <div>
+                        <div className="text-sm text-ink/70 mb-1">Reminder title</div>
+                        <input
+                            className="w-full rounded border bg-white px-2 py-1"
+                            value={logReminder}
+                            onChange={(e) => setLogReminder(e.target.value)}
+                            placeholder="(optional)"
+                        />
+                    </div>
+                    <div>
+                        <div className="text-sm text-ink/70 mb-1">Date (YYYY-MM-DD)</div>
+                        <input
+                            className="w-full rounded border bg-white px-2 py-1"
+                            value={logYmd}
+                            onChange={(e) => setLogYmd(e.target.value)}
+                            placeholder="e.g. 2025-09-24"
+                        />
+                    </div>
+                    <div>
+                        <div className="text-sm text-ink/70 mb-1">Email contains</div>
+                        <input
+                            className="w-full rounded border bg-white px-2 py-1"
+                            value={logEmail}
+                            onChange={(e) => setLogEmail(e.target.value)}
+                            placeholder="(optional)"
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-auto rounded-lg border">
+                    <table className="min-w-[820px] w-full text-sm">
+                        <thead className="bg-[#d6d4ca] text-ink/80">
+                            <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
+                                <th>Created</th>
+                                <th>Reminder</th>
+                                <th>Email</th>
+                                <th>Day bucket</th>
+                                <th>Kind</th>
+                            </tr>
+                        </thead>
+                        <tbody className="[&>tr>td]:px-3 [&>tr>td]:py-2 divide-y">
+                            {logs.map((r) => (
+                                <tr key={r.id}>
+                                    <td className="whitespace-nowrap">
+                                        {formatNYDateTime(r.created_at)}
+                                    </td>
+                                    <td className="max-w-[260px] truncate" title={r.reminder_title}>
+                                        {r.reminder_title}
+                                    </td>
+                                    <td className="max-w-[260px] truncate" title={r.email}>
+                                        {r.email}
+                                    </td>
+                                    <td>{r.ymd}</td>
+                                    <td>{r.kind}</td>
+                                </tr>
+                            ))}
+                            {logs.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="py-6 text-center text-ink/60">
+                                        No logs loaded. Set filters and click Filter.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     );
 }
