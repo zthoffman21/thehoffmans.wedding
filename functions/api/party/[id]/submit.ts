@@ -355,7 +355,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
         await env.DB.batch(stmts);
 
         const adminUrl = "https://thehoffmans.wedding/admin";
-        const csvUrl = "https://thehoffmans.wedding/api/admin/export";
+        const csvUrl = "https://thehoffmans.wedding/api/admin/export/latest-rsvps";
 
         const html = renderRSVPEmailHTML(
             {
