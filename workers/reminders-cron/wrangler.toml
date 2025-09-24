@@ -1,0 +1,7 @@
+name = "thehoffmans-cron"
+main = "src/cron.ts"
+compatibility_date = "2025-09-15"
+
+[triggers]
+# 9:00 AM New York ~ 13:00 UTC
+crons = ["0 13 * * *"]
