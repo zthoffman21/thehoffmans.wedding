@@ -5,12 +5,12 @@ DROP TABLE IF EXISTS rsvp_submissions;
 DROP TABLE IF EXISTS members;
 DROP TABLE IF EXISTS party_fts;
 DROP TABLE IF EXISTS idempotency;
-DROP TABLE IF EXISTS rate_log;
 DROP TABLE IF EXISTS parties;
 
-DROP TABLE IF EXISTS photos;
-DROP TABLE IF EXISTS albums;
-DROP TABLE IF EXISTS settings;
+-- DROP TABLE IF EXISTS photos;
+-- DROP TABLE IF EXISTS albums;
+-- DROP TABLE IF EXISTS settings;
+-- DROP TABLE IF EXISTS rate_log;
 
 DROP TABLE IF EXISTS reminder_sends;
 DROP TABLE IF EXISTS reminder_log;
@@ -128,12 +128,6 @@ CREATE TABLE IF NOT EXISTS reminder_sends (
   days_out INTEGER,
   html_content_index INTEGER NOT NULL
 );
-INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, html_content_index) VALUES
-  ('TEST: Set Day', '2025-09-17T05:14:25.000Z', NULL, 3),
-  ('TEST: Days Out', NULL, 1, 3);
-  -- ('RSVP Reminder 30 Days', NULL, 30, 1),
-  -- ('RSVP Reminder 7 Days', NULL, 7, 2),
-  -- ('RSVP Reminder 1 Day', NULL, 1, 3);
 
 CREATE TABLE IF NOT EXISTS reminder_log (
   id              TEXT PRIMARY KEY,
