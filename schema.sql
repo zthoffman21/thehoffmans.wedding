@@ -119,7 +119,27 @@ CREATE TABLE IF NOT EXISTS email_usage (
   ym TEXT PRIMARY KEY,
   count INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS reminder_sends (
+  reminder_title TEXT PRIMARY KEY,
+  send_date DATETIME,
+  days_out INTEGER,
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  html_content_index INTEGER NOT NULL
+);
+INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, status, html_content_index) VALUES
+  ('RSVP Reminder 30 Days', NULL, 30, 'scheduled', 1),
+  ('RSVP Reminder 7 Days', NULL, 7, 'scheduled', 2),
+  ('RSVP Reminder 1 Day', NULL, 1, 'scheduled', 3);
 
+CREATE TABLE IF NOT EXISTS reminder_log (
+  id              TEXT PRIMARY KEY,
+  reminder_title  TEXT NOT NULL,
+  email           TEXT NOT NULL,
+  ymd             TEXT NOT NULL,
+  kind            TEXT NOT NULL CHECK (kind IN ('ABSOLUTE','DAYS_OUT')),
+  created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(reminder_title, email, ymd)
+);
 
 CREATE TRIGGER IF NOT EXISTS party_fts_insert AFTER INSERT ON parties BEGIN
   INSERT INTO party_fts (party_id, display_name, members)
@@ -179,3 +199,6 @@ CREATE INDEX IF NOT EXISTS idx_submissions_party ON rsvp_submissions(party_id);
 CREATE INDEX IF NOT EXISTS idx_photos_public ON photos (is_public, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_status ON photos (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_approved ON photos (created_at DESC) WHERE status = 'approved' AND is_public = 1;
+
+CREATE INDEX IF NOT EXISTS idx_rlog_title_email ON reminder_log(reminder_title, email);
+CREATE INDEX IF NOT EXISTS idx_rlog_ymd ON reminder_log(ymd);

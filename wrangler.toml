@@ -27,5 +27,8 @@ EMAIL_ENABLED = "true"
 R2_ACCOUNT_ID = "c6fe53e49dbf0c67ee5fe60c2c01b001"
 R2_BUCKET     = "wedding-photos"
 
+[triggers]
+crons = ["0 * * * *"]
+
 [dev]
 port = 8787
