@@ -160,7 +160,7 @@ export default function GalleryUploadInline({
             <button
                 type="submit"
                 className="rounded-xl px-3 py-2 bg-ink/90 text-ink disabled:opacity-50"
-                disabled={busy}
+                disabled={busy || !files?.length}
             >
                 {busy ? `Uploading… ${progress}%` : "Upload"}
             </button>
