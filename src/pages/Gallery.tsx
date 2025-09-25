@@ -248,7 +248,7 @@ export default function Gallery() {
                         <button
                             onClick={() => setShowUpload(true)}
                             className="rounded-lg bg-[#FAF7EC] px-3 py-1.5 font-medium text-[#203648] shadow-sm ring-1 ring-white/20 transition
-                   hover:bg-white/95 hover:shadow-md active:scale-[0.98]
+                   hover:brightness-95 hover:shadow-md active:scale-[0.98]
                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             aria-label="Add photos"
                         >
@@ -362,7 +362,7 @@ export default function Gallery() {
                 >
                     <div className="w-full max-w-xl rounded-2xl bg-[#203648] p-4 text-[#FAF7EC] shadow-2xl ring-1 ring-white/10">
                         <div className="mb-3 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Upload photos</h2>
+                            <h2 className="text-lg font-semibold text-[#FAF7EC]">Upload photos</h2>
                             <button
                                 onClick={() => setShowUpload(false)}
                                 className="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"

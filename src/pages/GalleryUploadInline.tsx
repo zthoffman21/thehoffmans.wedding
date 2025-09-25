@@ -128,7 +128,7 @@ export default function GalleryUploadInline({
             setTimeout(() => {
                 setProgress(0);
                 setNotice(null);
-	            onDone?.();
+                onDone?.();
             }, 5000);
         } catch (err: any) {
             setBusy(false);
@@ -138,12 +138,41 @@ export default function GalleryUploadInline({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setFiles(e.target.files)}
-            />
+<label className="inline-flex items-center gap-2">
+  <span
+    className="inline-flex items-center rounded-lg px-2 py-1 text-sm font-medium
+               border border-ink/20 shadow-sm
+               cursor-pointer hover:brightness-95 focus-visible:outline-none
+               focus-visible:ring-2 focus-visible:ring-ink/30"
+    style={{ backgroundColor: "#FAF7EC", color: "#1F1A17" }}
+  >
+    Choose photos
+  </span>
+
+  <span className="text-sm" id="file-help" style={{ color: "#FAF7EC" }}>
+    No files chosen
+  </span>
+
+  <input
+    id="photos"
+    type="file"
+    accept="image/*"
+    multiple
+    style={{color: "#1F1A17"}}
+    className="sr-only"
+    aria-describedby="file-help"
+    onChange={(e) => {
+      const names = Array.from(e.target.files || [])
+        .map((f) => f.name)
+        .join(", ");
+        setFiles(e.target.files);
+      const el = document.getElementById("file-help");
+      if (el) el.textContent = names || "No files chosen";
+    }}
+  />
+</label>
+
+
             <input
                 className="w-full rounded border p-2"
                 placeholder="Your name (optional)"
@@ -159,7 +188,7 @@ export default function GalleryUploadInline({
 
             <button
                 type="submit"
-                className="rounded-xl px-3 py-2 bg-ink/90 text-ink disabled:opacity-50"
+                className="rounded-xl px-3 py-2 bg-ink/90 text-ink disabled:opacity-50 hover:brightness-95"
                 disabled={busy || !files?.length}
             >
                 {busy ? `Uploading… ${progress}%` : "Upload"}
