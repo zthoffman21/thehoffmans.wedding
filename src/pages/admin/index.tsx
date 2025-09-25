@@ -53,7 +53,173 @@ type MemberDetail = {
 };
 
 /* =========================================================================
-   NEW: Admin gallery types + tiny helpers
+   Zoned datetime picker: edit in any TZ, store as UTC ISO
+   ========================================================================= */
+
+const COMMON_TIMEZONES = [
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Phoenix",
+    "America/Anchorage",
+    "Pacific/Honolulu",
+    "Europe/London",
+    "Europe/Paris",
+    "Europe/Berlin",
+    "Asia/Tokyo",
+    "Asia/Shanghai",
+    "Asia/Kolkata",
+    "Australia/Sydney",
+] as const;
+
+// Try to detect a sensible default (falls back to America/New_York)
+const DEFAULT_TZ =
+    (Intl.DateTimeFormat().resolvedOptions().timeZone as string | undefined) || "America/New_York";
+
+// Formats a Date in a given timeZone into an offset like "GMT-4" -> minutes
+function getOffsetMinutesFor(date: Date, timeZone: string): number {
+    // timeZoneName: "shortOffset" yields e.g., "GMT-4"
+    const fmt = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        timeZoneName: "shortOffset",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
+    const parts = fmt.formatToParts(date);
+    const tzName = parts.find((p) => p.type === "timeZoneName")?.value || "GMT+0";
+    const m = tzName.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/i);
+    if (!m) return 0;
+    const h = Number(m[1]);
+    const mm = Number(m[2] || 0);
+    return h * 60 + (h >= 0 ? mm : -mm);
+}
+
+// Turn UTC ISO -> "YYYY-MM-DDTHH:mm" in selected TZ, for <input type="datetime-local">
+function utcIsoToLocalInput(utcIso: string, timeZone: string): string {
+    const utcDate = new Date(utcIso);
+    if (Number.isNaN(utcDate.getTime())) return "";
+    const offsetMin = getOffsetMinutesFor(utcDate, timeZone);
+    const localMs = utcDate.getTime() + offsetMin * 60_000;
+    const d = new Date(localMs);
+    // use UTC getters so we don't apply the browser's local zone again
+    const Y = d.getUTCFullYear();
+    const M = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const D = String(d.getUTCDate()).padStart(2, "0");
+    const h = String(d.getUTCHours()).padStart(2, "0");
+    const m = String(d.getUTCMinutes()).padStart(2, "0");
+    return `${Y}-${M}-${D}T${h}:${m}`;
+}
+
+// Turn "YYYY-MM-DDTHH:mm" (wall time in TZ) -> UTC ISO string
+function localInputToUtcIso(localValue: string, timeZone: string): string | null {
+    if (!localValue) return null;
+    const m = localValue.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+    if (!m) return null;
+    const [_, Ys, Ms, Ds, hs, ms] = m;
+    const Y = Number(Ys),
+        Mo = Number(Ms) - 1,
+        D = Number(Ds),
+        H = Number(hs),
+        Mi = Number(ms);
+    // This represents the *wall time* in the chosen TZ. Start with a naive UTC ms at that wall time:
+    let localMs = Date.UTC(Y, Mo, D, H, Mi, 0, 0);
+    // First guess offset at that (approx) instant:
+    let off1 = getOffsetMinutesFor(new Date(localMs), timeZone);
+    let utcMs = localMs - off1 * 60_000;
+    // Recompute once (handles DST transitions at that instant)
+    const off2 = getOffsetMinutesFor(new Date(utcMs), timeZone);
+    if (off2 !== off1) {
+        utcMs = localMs - off2 * 60_000;
+    }
+    return new Date(utcMs).toISOString();
+}
+
+function tzLabel(tz: string) {
+    const city = tz.split("/").slice(-1)[0]?.replaceAll("_", " ") || tz;
+    return `${city} (${tz})`;
+}
+
+function PreviewUtc({ iso }: { iso: string | null }) {
+    if (!iso) return <span className="text-ink/40">—</span>;
+    // Compact preview: YYYY-MM-DD HH:mmZ
+    const d = new Date(iso);
+    const Z = iso.endsWith("Z") ? "Z" : "";
+    const Y = d.getUTCFullYear();
+    const M = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const D = String(d.getUTCDate()).padStart(2, "0");
+    const h = String(d.getUTCHours()).padStart(2, "0");
+    const m = String(d.getUTCMinutes()).padStart(2, "0");
+    return <code className="text-xs">{`${Y}-${M}-${D} ${h}:${m}${Z}`}</code>;
+}
+
+function DateTimeTZPicker({
+    label,
+    valueUtc,
+    onChangeUtc,
+    initialTimeZone = "America/New_York",
+    disabled,
+}: {
+    label?: string;
+    valueUtc: string | null;
+    onChangeUtc: (isoOrNull: string | null) => void;
+    initialTimeZone?: string;
+    disabled?: boolean;
+}) {
+    const [tz, setTz] = useState<string>(initialTimeZone || DEFAULT_TZ);
+    const [localVal, setLocalVal] = useState<string>("");
+
+    // Keep local input in sync when valueUtc or tz changes
+    useEffect(() => {
+        setLocalVal(valueUtc ? utcIsoToLocalInput(valueUtc, tz) : "");
+    }, [valueUtc, tz]);
+
+    return (
+        <div className="space-y-1">
+            {label && <div className="text-sm text-ink/70">{label}</div>}
+            <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                    type="datetime-local"
+                    className="rounded-lg border bg-white px-3 py-2"
+                    value={localVal}
+                    onChange={(e) => {
+                        const v = e.currentTarget.value;
+                        setLocalVal(v);
+                        onChangeUtc(v ? localInputToUtcIso(v, tz) : null);
+                    }}
+                    disabled={disabled}
+                />
+                <select
+                    className="rounded-lg border bg-white px-3 py-2"
+                    value={tz}
+                    onChange={(e) => {
+                        const next = e.currentTarget.value;
+                        setTz(next);
+                        // recompute UTC from current localVal under the new tz
+                        onChangeUtc(localVal ? localInputToUtcIso(localVal, next) : null);
+                    }}
+                    disabled={disabled}
+                >
+                    {[tz, ...COMMON_TIMEZONES.filter((z) => z !== tz)].map((z) => (
+                        <option key={z} value={z}>
+                            {tzLabel(z)}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="text-xs text-ink/60">
+                Stored (UTC): <PreviewUtc iso={valueUtc} />
+            </div>
+        </div>
+    );
+}
+
+/* =========================================================================
+    Admin gallery types + tiny helpers
    ========================================================================= */
 
 type AdminPhoto = {
@@ -726,13 +892,12 @@ function PartyEditor({
                         onChange={(b) => onChange({ ...party, can_rsvp: b ? 1 : 0 })}
                     />
                 </L>
-                <L label="RSVP deadline (ISO)">
-                    <I
-                        value={party.rsvp_deadline ?? ""}
-                        onChange={(v) => onChange({ ...party, rsvp_deadline: v || null })}
-                        placeholder="YYYY-MM-DDTHH:mm:ssZ"
-                    />
-                </L>
+                <DateTimeTZPicker
+                    label="RSVP deadline"
+                    valueUtc={party.rsvp_deadline ?? null}
+                    initialTimeZone="America/New_York"
+                    onChangeUtc={(iso) => onChange({ ...party, rsvp_deadline: iso })}
+                />
             </div>
 
             <div className="flex gap-2">
@@ -1652,7 +1817,7 @@ function RemindersTab() {
                                     <td className="max-w-[260px] truncate" title={r.reminder_title}>
                                         {r.reminder_title}
                                     </td>
-                                    <td className="whitespace-nowrap">{r.send_date ?? "—"}</td>
+                                    <td className="whitespace-nowrap">{r.send_date == null? "-": formatNYDateTime(r.send_date)}</td>
                                     <td>{r.days_out ?? "—"}</td>
                                     <td>#{r.html_content_index}</td>
                                     <td className="text-right">
@@ -1694,13 +1859,15 @@ function RemindersTab() {
                                     />
                                 </td>
                                 <td>
-                                    <input
-                                        className="w-full rounded border bg-white px-2 py-1"
-                                        value={draft.send_date ?? ""}
-                                        onChange={(e) => onChangeField("send_date", e.target.value)}
-                                        placeholder="YYYY-MM-DDTHH:mm:ssZ"
+                                    <DateTimeTZPicker
+                                        valueUtc={draft.send_date ?? null}
+                                        initialTimeZone="America/New_York"
+                                        onChangeUtc={(iso) =>
+                                            onChangeField("send_date", iso as any)
+                                        }
                                     />
                                 </td>
+
                                 <td>
                                     <input
                                         type="number"
