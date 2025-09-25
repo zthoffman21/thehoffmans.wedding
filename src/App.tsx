@@ -7,7 +7,7 @@ import Info from "./pages/Info";
 import Invite from "./pages/Invite";
 import Guide from "./pages/Guide";
 import AdminDashboard from "./pages/admin";
-import { ScrollOnNav } from "./Scroll";
+import ScrollToTop from "./Scroll";
 
 export default function App() {
     const location = useLocation();
@@ -15,7 +15,7 @@ export default function App() {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <ScrollOnNav />
+            <ScrollToTop />
 
             {!isInvite && <Navbar />}
 
