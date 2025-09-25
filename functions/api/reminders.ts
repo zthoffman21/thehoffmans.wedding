@@ -102,7 +102,7 @@ async function getScheduledReminderList(env: Env): Promise<ReminderRow[]> {
 function renderHtml(index: number, ctx: { display_name: string, rsvp_deadline: string }): string {
     switch (index) {
         case 1:
-			return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateLong(ctx.rsvp_deadline));
+			return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
 		case 2:
 			return finalLogisticsTemplate(ctx.display_name);
 		case 3:
@@ -145,7 +145,6 @@ async function claimAndSendOne(
     kind: "ABSOLUTE" | "DAYS_OUT",
     reminderTitle: string,
     htmlIndex: number,
-    subject: string,
     contact: EmailContact,
     ymd: string
 ): Promise<"sent" | "skipped-duplicate" | "failed"> {
@@ -175,7 +174,7 @@ async function claimAndSendOne(
         await resend.emails.send({
             from: env.EMAIL_FROM,
             to: contact.contact_email,
-            subject,
+            subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
             html,
         });
         return "sent";
@@ -194,7 +193,6 @@ async function sendToAllWithLog(
     reminderTitle: string,
     htmlIndex: number,
     contacts: EmailContact[],
-    subject: string,
     ymd: string
 ): Promise<{ successes: number; failures: number; skipped: number }> {
     let successes = 0,
@@ -208,7 +206,6 @@ async function sendToAllWithLog(
             kind,
             reminderTitle,
             htmlIndex,
-            subject,
             c,
             ymd
         );
@@ -265,7 +262,6 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
                     r.reminder_title,
                     r.html_content_index,
                     contacts,
-                    subject,
                     dayKey
                 );
 
@@ -296,7 +292,6 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
                     r.reminder_title,
                     r.html_content_index,
                     dueToday,
-                    subject,
                     dayKey
                 );
 

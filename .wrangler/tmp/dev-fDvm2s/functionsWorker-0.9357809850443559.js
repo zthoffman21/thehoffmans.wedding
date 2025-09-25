@@ -46184,9 +46184,17 @@ function thankYouTemplate(guest_name) {
 </html>`;
 }
 __name(thankYouTemplate, "thankYouTemplate");
+var EMAIL_SUBJECTS;
 var init_reminder_html = __esm({
   "api/reminder_html.ts"() {
     init_functionsRoutes_0_10079449694519549();
+    EMAIL_SUBJECTS = {
+      0: "Quick update from Avery & Zach",
+      1: "You can update your RSVP until {{rsvp_deadline_short}}",
+      2: "Final details for the wedding (parking, timing, map)",
+      3: "Got wedding photos? We'd love to see them \u{1F4F8}",
+      4: "Thank you for celebrating with us \u2764\uFE0F"
+    };
     __name2(defaultTemplate, "defaultTemplate");
     __name2(rsvpDeadlineReminderTemplate, "rsvpDeadlineReminderTemplate");
     __name2(finalLogisticsTemplate, "finalLogisticsTemplate");
@@ -46204,6 +46212,23 @@ function formatNYDateShort(utcIso) {
   }).format(d2);
 }
 __name(formatNYDateShort, "formatNYDateShort");
+function formatNYDateTimeLong(utcIso) {
+  const d2 = new Date(utcIso);
+  const datePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(d2);
+  const timePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(d2);
+  return `${datePart} at ${timePart}`;
+}
+__name(formatNYDateTimeLong, "formatNYDateTimeLong");
 async function ensureReminderLog(env) {
   await env.DB.prepare(
     `
@@ -46249,7 +46274,7 @@ __name(getScheduledReminderList, "getScheduledReminderList");
 function renderHtml(index, ctx) {
   switch (index) {
     case 1:
-      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateLong(ctx.rsvp_deadline));
+      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
     case 2:
       return finalLogisticsTemplate(ctx.display_name);
     case 3:
@@ -46284,7 +46309,7 @@ function ymdNY(date5) {
   return fmt.format(date5);
 }
 __name(ymdNY, "ymdNY");
-async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subject, contact, ymd) {
+async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, contact, ymd) {
   const myId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT OR IGNORE INTO reminder_log (id, reminder_title, email, ymd, kind)
@@ -46300,7 +46325,7 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subj
     await resend.emails.send({
       from: env.EMAIL_FROM,
       to: contact.contact_email,
-      subject,
+      subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
       html
     });
     return "sent";
@@ -46311,7 +46336,7 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subj
   }
 }
 __name(claimAndSendOne, "claimAndSendOne");
-async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, subject, ymd) {
+async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, ymd) {
   let successes = 0, failures = 0, skipped = 0;
   for (const c2 of contacts) {
     const result = await claimAndSendOne(
@@ -46320,7 +46345,6 @@ async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, con
       kind,
       reminderTitle,
       htmlIndex,
-      subject,
       c2,
       ymd
     );
@@ -46338,6 +46362,7 @@ var init_reminders2 = __esm({
     init_dist();
     init_reminder_html();
     __name2(formatNYDateShort, "formatNYDateShort");
+    __name2(formatNYDateTimeLong, "formatNYDateTimeLong");
     __name2(ensureReminderLog, "ensureReminderLog");
     __name2(getEmailList, "getEmailList");
     __name2(getScheduledReminderList, "getScheduledReminderList");
@@ -46378,7 +46403,6 @@ var init_reminders2 = __esm({
               r2.reminder_title,
               r2.html_content_index,
               contacts,
-              subject,
               dayKey
             );
             processed++;
@@ -46404,7 +46428,6 @@ var init_reminders2 = __esm({
               r2.reminder_title,
               r2.html_content_index,
               dueToday,
-              subject,
               dayKey
             );
             processed++;

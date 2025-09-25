@@ -44470,9 +44470,17 @@ function thankYouTemplate(guest_name) {
 </body>
 </html>`;
 }
+var EMAIL_SUBJECTS;
 var init_reminder_html = __esm({
   "api/reminder_html.ts"() {
     init_functionsRoutes_0_10079449694519549();
+    EMAIL_SUBJECTS = {
+      0: "Quick update from Avery & Zach",
+      1: "You can update your RSVP until {{rsvp_deadline_short}}",
+      2: "Final details for the wedding (parking, timing, map)",
+      3: "Got wedding photos? We'd love to see them \u{1F4F8}",
+      4: "Thank you for celebrating with us \u2764\uFE0F"
+    };
     __name(defaultTemplate, "defaultTemplate");
     __name(rsvpDeadlineReminderTemplate, "rsvpDeadlineReminderTemplate");
     __name(finalLogisticsTemplate, "finalLogisticsTemplate");
@@ -44490,6 +44498,22 @@ function formatNYDateShort(utcIso) {
     day: "2-digit",
     year: "numeric"
   }).format(d2);
+}
+function formatNYDateTimeLong(utcIso) {
+  const d2 = new Date(utcIso);
+  const datePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(d2);
+  const timePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(d2);
+  return `${datePart} at ${timePart}`;
 }
 async function ensureReminderLog(env) {
   await env.DB.prepare(
@@ -44533,7 +44557,7 @@ async function getScheduledReminderList(env) {
 function renderHtml(index, ctx) {
   switch (index) {
     case 1:
-      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateLong(ctx.rsvp_deadline));
+      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
     case 2:
       return finalLogisticsTemplate(ctx.display_name);
     case 3:
@@ -44564,7 +44588,7 @@ function ymdNY(date5) {
   });
   return fmt.format(date5);
 }
-async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subject, contact, ymd) {
+async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, contact, ymd) {
   const myId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT OR IGNORE INTO reminder_log (id, reminder_title, email, ymd, kind)
@@ -44580,7 +44604,7 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subj
     await resend.emails.send({
       from: env.EMAIL_FROM,
       to: contact.contact_email,
-      subject,
+      subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
       html
     });
     return "sent";
@@ -44590,7 +44614,7 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, subj
     return "failed";
   }
 }
-async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, subject, ymd) {
+async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, ymd) {
   let successes = 0, failures = 0, skipped = 0;
   for (const c2 of contacts) {
     const result = await claimAndSendOne(
@@ -44599,7 +44623,6 @@ async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, con
       kind,
       reminderTitle,
       htmlIndex,
-      subject,
       c2,
       ymd
     );
@@ -44616,6 +44639,7 @@ var init_reminders2 = __esm({
     init_dist();
     init_reminder_html();
     __name(formatNYDateShort, "formatNYDateShort");
+    __name(formatNYDateTimeLong, "formatNYDateTimeLong");
     __name(ensureReminderLog, "ensureReminderLog");
     __name(getEmailList, "getEmailList");
     __name(getScheduledReminderList, "getScheduledReminderList");
@@ -44656,7 +44680,6 @@ var init_reminders2 = __esm({
               r2.reminder_title,
               r2.html_content_index,
               contacts,
-              subject,
               dayKey
             );
             processed++;
@@ -44682,7 +44705,6 @@ var init_reminders2 = __esm({
               r2.reminder_title,
               r2.html_content_index,
               dueToday,
-              subject,
               dayKey
             );
             processed++;
@@ -44946,10 +44968,10 @@ var init_functionsRoutes_0_10079449694519549 = __esm({
   }
 });
 
-// ../.wrangler/tmp/bundle-9rb8N9/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-RS7mvS/middleware-loader.entry.ts
 init_functionsRoutes_0_10079449694519549();
 
-// ../.wrangler/tmp/bundle-9rb8N9/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-RS7mvS/middleware-insertion-facade.js
 init_functionsRoutes_0_10079449694519549();
 
 // ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
@@ -45445,7 +45467,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-9rb8N9/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-RS7mvS/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -45478,7 +45500,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-9rb8N9/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-RS7mvS/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
