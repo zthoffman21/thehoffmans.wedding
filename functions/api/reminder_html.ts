@@ -216,7 +216,6 @@ export function thankYouTemplate(guest_name: string) {
       <p>Hi ${guest_name},</p>
       <p>We're so grateful you could be part of our day. Thank you for the love, laughs, and memories!</p>
       <div class="cards">
-        {{#if album_link}}
         <div class="card">
           <h2 style="font-size:16px;">Photo Gallery</h2>
           <p>Highlights and guest uploads are collected here.</p>

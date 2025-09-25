@@ -1,7 +1,14 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Resend } from "resend";
 import { Env } from "./_utils";
-import { EMAIL_SUBJECTS, thankYouTemplate, defaultTemplate, photoUploadTemplate, finalLogisticsTemplate, rsvpDeadlineReminderTemplate } from "./reminder_html";
+import {
+    EMAIL_SUBJECTS,
+    thankYouTemplate,
+    defaultTemplate,
+    photoUploadTemplate,
+    finalLogisticsTemplate,
+    rsvpDeadlineReminderTemplate,
+} from "./reminder_html";
 
 /* ----------------------------- Types ----------------------------- */
 type EmailContact = {
@@ -17,18 +24,54 @@ type ReminderRow = {
     html_content_index: number;
 };
 
+// resendLimiter.ts
+type SendFn<T> = () => Promise<T>;
+
+const MAX_RPS = 2; // Resend default
+const SPACING_MS = Math.ceil(1000 / MAX_RPS); // ~500ms
+const MAX_RETRIES = 5;
+
+function sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+}
+
+export async function withResendRateLimit<T>(fn: SendFn<T>): Promise<T> {
+    let attempt = 0;
+    while (true) {
+        try {
+            // space calls to respect ~2 rps
+            await sleep(SPACING_MS);
+            return await fn();
+        } catch (err: any) {
+            const status = err?.status ?? err?.response?.status;
+            if (status !== 429 || attempt >= MAX_RETRIES) throw err;
+
+            // Use RateLimit headers if present; else exponential backoff + jitter
+            const hdrs = err?.response?.headers;
+            const resetSec = Number(hdrs?.get?.("ratelimit-reset")) || 0;
+            const waitMs =
+                resetSec > 0
+                    ? Math.max(250, resetSec * 1000)
+                    : Math.min(8000, 2 ** attempt * 400 + Math.floor(Math.random() * 200));
+
+            attempt++;
+            await sleep(waitMs);
+        }
+    }
+}
+
 /**
  * Convert a UTC ISO string to New York time zone
  * and return as MM/DD/YYYY.
  */
 export function formatNYDateShort(utcIso: string): string {
-  const d = new Date(utcIso);
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  }).format(d);
+    const d = new Date(utcIso);
+    return new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+    }).format(d);
 }
 
 /**
@@ -37,22 +80,21 @@ export function formatNYDateShort(utcIso: string): string {
  * Example: "September 24, 2025 at 6:30 PM"
  */
 export function formatNYDateTimeLong(utcIso: string): string {
-  const d = new Date(utcIso);
-  const datePart = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(d);
-  const timePart = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(d);
-  return `${datePart} at ${timePart}`;
+    const d = new Date(utcIso);
+    const datePart = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+    }).format(d);
+    const timePart = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    }).format(d);
+    return `${datePart} at ${timePart}`;
 }
-
 
 /* ---------------------- Ensure reminder_log ---------------------- */
 async function ensureReminderLog(env: Env) {
@@ -99,19 +141,23 @@ async function getScheduledReminderList(env: Env): Promise<ReminderRow[]> {
 }
 
 /* ---------------------------- Templating ------------------------- */
-function renderHtml(index: number, ctx: { display_name: string, rsvp_deadline: string }): string {
+function renderHtml(index: number, ctx: { display_name: string; rsvp_deadline: string }): string {
     switch (index) {
         case 1:
-			return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
-		case 2:
-			return finalLogisticsTemplate(ctx.display_name);
-		case 3:
-			return photoUploadTemplate(ctx.display_name);
-		case 4:
-			return thankYouTemplate(ctx.display_name);
-		case 0:
+            return rsvpDeadlineReminderTemplate(
+                ctx.display_name,
+                formatNYDateShort(ctx.rsvp_deadline),
+                formatNYDateTimeLong(ctx.rsvp_deadline)
+            );
+        case 2:
+            return finalLogisticsTemplate(ctx.display_name);
+        case 3:
+            return photoUploadTemplate(ctx.display_name);
+        case 4:
+            return thankYouTemplate(ctx.display_name);
+        case 0:
         default:
-			return defaultTemplate(ctx.display_name);
+            return defaultTemplate(ctx.display_name);
     }
 }
 
@@ -170,13 +216,19 @@ async function claimAndSendOne(
 
     // 3) We own it — send the email
     try {
-        const html = renderHtml(htmlIndex, { display_name: contact.display_name ?? "", rsvp_deadline: contact.rsvp_deadline ?? ""});
-        await resend.emails.send({
-            from: env.EMAIL_FROM,
-            to: contact.contact_email,
-            subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
-            html,
+        const html = renderHtml(htmlIndex, {
+            display_name: contact.display_name ?? "",
+            rsvp_deadline: contact.rsvp_deadline ?? "",
         });
+        await withResendRateLimit(() =>
+            resend.emails.send({
+                from: env.EMAIL_FROM,
+                to: contact.contact_email,
+                subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
+                html,
+            })
+        );
+
         return "sent";
     } catch (e) {
         // Allow retry later by releasing our claim
@@ -200,15 +252,7 @@ async function sendToAllWithLog(
         skipped = 0;
 
     for (const c of contacts) {
-        const result = await claimAndSendOne(
-            resend,
-            env,
-            kind,
-            reminderTitle,
-            htmlIndex,
-            c,
-            ymd
-        );
+        const result = await claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, c, ymd);
         if (result === "sent") successes++;
         else if (result === "failed") failures++;
         else skipped++;

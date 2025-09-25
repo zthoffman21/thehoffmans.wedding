@@ -46167,7 +46167,6 @@ function thankYouTemplate(guest_name) {
       <p>Hi ${guest_name},</p>
       <p>We're so grateful you could be part of our day. Thank you for the love, laughs, and memories!</p>
       <div class="cards">
-        {{#if album_link}}
         <div class="card">
           <h2 style="font-size:16px;">Photo Gallery</h2>
           <p>Highlights and guest uploads are collected here.</p>
@@ -46202,6 +46201,28 @@ var init_reminder_html = __esm({
     __name2(thankYouTemplate, "thankYouTemplate");
   }
 });
+function sleep(ms) {
+  return new Promise((r2) => setTimeout(r2, ms));
+}
+__name(sleep, "sleep");
+async function withResendRateLimit(fn) {
+  let attempt = 0;
+  while (true) {
+    try {
+      await sleep(SPACING_MS);
+      return await fn();
+    } catch (err) {
+      const status = err?.status ?? err?.response?.status;
+      if (status !== 429 || attempt >= MAX_RETRIES) throw err;
+      const hdrs = err?.response?.headers;
+      const resetSec = Number(hdrs?.get?.("ratelimit-reset")) || 0;
+      const waitMs = resetSec > 0 ? Math.max(250, resetSec * 1e3) : Math.min(8e3, 2 ** attempt * 400 + Math.floor(Math.random() * 200));
+      attempt++;
+      await sleep(waitMs);
+    }
+  }
+}
+__name(withResendRateLimit, "withResendRateLimit");
 function formatNYDateShort(utcIso) {
   const d2 = new Date(utcIso);
   return new Intl.DateTimeFormat("en-US", {
@@ -46274,7 +46295,11 @@ __name(getScheduledReminderList, "getScheduledReminderList");
 function renderHtml(index, ctx) {
   switch (index) {
     case 1:
-      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
+      return rsvpDeadlineReminderTemplate(
+        ctx.display_name,
+        formatNYDateShort(ctx.rsvp_deadline),
+        formatNYDateTimeLong(ctx.rsvp_deadline)
+      );
     case 2:
       return finalLogisticsTemplate(ctx.display_name);
     case 3:
@@ -46321,13 +46346,18 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, cont
   if (!row) return "failed";
   if (row.id !== myId) return "skipped-duplicate";
   try {
-    const html = renderHtml(htmlIndex, { display_name: contact.display_name ?? "", rsvp_deadline: contact.rsvp_deadline ?? "" });
-    await resend.emails.send({
-      from: env.EMAIL_FROM,
-      to: contact.contact_email,
-      subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
-      html
+    const html = renderHtml(htmlIndex, {
+      display_name: contact.display_name ?? "",
+      rsvp_deadline: contact.rsvp_deadline ?? ""
     });
+    await withResendRateLimit(
+      () => resend.emails.send({
+        from: env.EMAIL_FROM,
+        to: contact.contact_email,
+        subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
+        html
+      })
+    );
     return "sent";
   } catch (e2) {
     await env.DB.prepare(`DELETE FROM reminder_log WHERE id=?`).bind(myId).run();
@@ -46339,15 +46369,7 @@ __name(claimAndSendOne, "claimAndSendOne");
 async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, ymd) {
   let successes = 0, failures = 0, skipped = 0;
   for (const c2 of contacts) {
-    const result = await claimAndSendOne(
-      resend,
-      env,
-      kind,
-      reminderTitle,
-      htmlIndex,
-      c2,
-      ymd
-    );
+    const result = await claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, c2, ymd);
     if (result === "sent") successes++;
     else if (result === "failed") failures++;
     else skipped++;
@@ -46355,12 +46377,20 @@ async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, con
   return { successes, failures, skipped };
 }
 __name(sendToAllWithLog, "sendToAllWithLog");
+var MAX_RPS;
+var SPACING_MS;
+var MAX_RETRIES;
 var onRequest5;
 var init_reminders2 = __esm({
   "api/reminders.ts"() {
     init_functionsRoutes_0_10079449694519549();
     init_dist();
     init_reminder_html();
+    MAX_RPS = 2;
+    SPACING_MS = Math.ceil(1e3 / MAX_RPS);
+    MAX_RETRIES = 5;
+    __name2(sleep, "sleep");
+    __name2(withResendRateLimit, "withResendRateLimit");
     __name2(formatNYDateShort, "formatNYDateShort");
     __name2(formatNYDateTimeLong, "formatNYDateTimeLong");
     __name2(ensureReminderLog, "ensureReminderLog");

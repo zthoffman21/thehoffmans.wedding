@@ -44454,7 +44454,6 @@ function thankYouTemplate(guest_name) {
       <p>Hi ${guest_name},</p>
       <p>We're so grateful you could be part of our day. Thank you for the love, laughs, and memories!</p>
       <div class="cards">
-        {{#if album_link}}
         <div class="card">
           <h2 style="font-size:16px;">Photo Gallery</h2>
           <p>Highlights and guest uploads are collected here.</p>
@@ -44490,6 +44489,26 @@ var init_reminder_html = __esm({
 });
 
 // api/reminders.ts
+function sleep(ms) {
+  return new Promise((r2) => setTimeout(r2, ms));
+}
+async function withResendRateLimit(fn) {
+  let attempt = 0;
+  while (true) {
+    try {
+      await sleep(SPACING_MS);
+      return await fn();
+    } catch (err) {
+      const status = err?.status ?? err?.response?.status;
+      if (status !== 429 || attempt >= MAX_RETRIES) throw err;
+      const hdrs = err?.response?.headers;
+      const resetSec = Number(hdrs?.get?.("ratelimit-reset")) || 0;
+      const waitMs = resetSec > 0 ? Math.max(250, resetSec * 1e3) : Math.min(8e3, 2 ** attempt * 400 + Math.floor(Math.random() * 200));
+      attempt++;
+      await sleep(waitMs);
+    }
+  }
+}
 function formatNYDateShort(utcIso) {
   const d2 = new Date(utcIso);
   return new Intl.DateTimeFormat("en-US", {
@@ -44557,7 +44576,11 @@ async function getScheduledReminderList(env) {
 function renderHtml(index, ctx) {
   switch (index) {
     case 1:
-      return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateTimeLong(ctx.rsvp_deadline));
+      return rsvpDeadlineReminderTemplate(
+        ctx.display_name,
+        formatNYDateShort(ctx.rsvp_deadline),
+        formatNYDateTimeLong(ctx.rsvp_deadline)
+      );
     case 2:
       return finalLogisticsTemplate(ctx.display_name);
     case 3:
@@ -44600,13 +44623,18 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, cont
   if (!row) return "failed";
   if (row.id !== myId) return "skipped-duplicate";
   try {
-    const html = renderHtml(htmlIndex, { display_name: contact.display_name ?? "", rsvp_deadline: contact.rsvp_deadline ?? "" });
-    await resend.emails.send({
-      from: env.EMAIL_FROM,
-      to: contact.contact_email,
-      subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
-      html
+    const html = renderHtml(htmlIndex, {
+      display_name: contact.display_name ?? "",
+      rsvp_deadline: contact.rsvp_deadline ?? ""
     });
+    await withResendRateLimit(
+      () => resend.emails.send({
+        from: env.EMAIL_FROM,
+        to: contact.contact_email,
+        subject: EMAIL_SUBJECTS[htmlIndex] || "Avery & Zach",
+        html
+      })
+    );
     return "sent";
   } catch (e2) {
     await env.DB.prepare(`DELETE FROM reminder_log WHERE id=?`).bind(myId).run();
@@ -44617,27 +44645,24 @@ async function claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, cont
 async function sendToAllWithLog(resend, env, kind, reminderTitle, htmlIndex, contacts, ymd) {
   let successes = 0, failures = 0, skipped = 0;
   for (const c2 of contacts) {
-    const result = await claimAndSendOne(
-      resend,
-      env,
-      kind,
-      reminderTitle,
-      htmlIndex,
-      c2,
-      ymd
-    );
+    const result = await claimAndSendOne(resend, env, kind, reminderTitle, htmlIndex, c2, ymd);
     if (result === "sent") successes++;
     else if (result === "failed") failures++;
     else skipped++;
   }
   return { successes, failures, skipped };
 }
-var onRequest5;
+var MAX_RPS, SPACING_MS, MAX_RETRIES, onRequest5;
 var init_reminders2 = __esm({
   "api/reminders.ts"() {
     init_functionsRoutes_0_10079449694519549();
     init_dist();
     init_reminder_html();
+    MAX_RPS = 2;
+    SPACING_MS = Math.ceil(1e3 / MAX_RPS);
+    MAX_RETRIES = 5;
+    __name(sleep, "sleep");
+    __name(withResendRateLimit, "withResendRateLimit");
     __name(formatNYDateShort, "formatNYDateShort");
     __name(formatNYDateTimeLong, "formatNYDateTimeLong");
     __name(ensureReminderLog, "ensureReminderLog");
@@ -44968,10 +44993,10 @@ var init_functionsRoutes_0_10079449694519549 = __esm({
   }
 });
 
-// ../.wrangler/tmp/bundle-4P5q4e/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-mOOqvk/middleware-loader.entry.ts
 init_functionsRoutes_0_10079449694519549();
 
-// ../.wrangler/tmp/bundle-4P5q4e/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-mOOqvk/middleware-insertion-facade.js
 init_functionsRoutes_0_10079449694519549();
 
 // ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
@@ -45467,7 +45492,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-4P5q4e/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-mOOqvk/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -45500,7 +45525,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-4P5q4e/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-mOOqvk/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
