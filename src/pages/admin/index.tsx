@@ -1895,9 +1895,11 @@ function RemindersTab() {
                                             )
                                         }
                                     >
-                                        <option value="0">Template #0 – Simple RSVP nudge</option>
-                                        <option value="1">Template #1 – Deadline coming up</option>
-                                        <option value="2">Template #2 – Generic update</option>
+                                        <option value="0">Default Template</option>
+                                        <option value="1">Deadline Coming Up</option>
+                                        <option value="2">Final Logistics</option>
+                                        <option value="3">Photo Upload Reminder</option>
+                                        <option value="4">Thank You</option>
                                     </select>
                                 </td>
                                 <td className="text-right">

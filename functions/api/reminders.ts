@@ -1,6 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Resend } from "resend";
 import { Env } from "./_utils";
+import { EMAIL_SUBJECTS, thankYouTemplate, defaultTemplate, photoUploadTemplate, finalLogisticsTemplate, rsvpDeadlineReminderTemplate } from "./reminder_html";
 
 /* ----------------------------- Types ----------------------------- */
 type EmailContact = {
@@ -15,6 +16,34 @@ type ReminderRow = {
     days_out: number | null;
     html_content_index: number;
 };
+
+/**
+ * Convert a UTC ISO string to New York time zone
+ * and return as MM/DD/YYYY.
+ */
+export function formatNYDateShort(utcIso: string): string {
+  const d = new Date(utcIso);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  }).format(d);
+}
+
+/**
+ * Convert a UTC ISO string to New York time zone
+ * and return as "Month Day" (e.g., September 24).
+ */
+export function formatNYDateLong(utcIso: string): string {
+  const d = new Date(utcIso);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "long",
+    day: "numeric",
+  }).format(d);
+}
+
 
 /* ---------------------- Ensure reminder_log ---------------------- */
 async function ensureReminderLog(env: Env) {
@@ -61,25 +90,20 @@ async function getScheduledReminderList(env: Env): Promise<ReminderRow[]> {
 }
 
 /* ---------------------------- Templating ------------------------- */
-function renderHtml(index: number, ctx: { display_name: string }): string {
+function renderHtml(index: number, ctx: { display_name: string, rsvp_deadline: string }): string {
     switch (index) {
-        case 0:
-            return `<p>Hi ${escapeHtml(ctx.display_name)}, just a friendly reminder to RSVP.</p>`;
         case 1:
-            return `<p>Hi ${escapeHtml(
-                ctx.display_name
-            )}, your RSVP deadline is coming up—don't miss it!</p>`;
+			return rsvpDeadlineReminderTemplate(ctx.display_name, formatNYDateShort(ctx.rsvp_deadline), formatNYDateLong(ctx.rsvp_deadline));
+		case 2:
+			return finalLogisticsTemplate(ctx.display_name);
+		case 3:
+			return photoUploadTemplate(ctx.display_name);
+		case 4:
+			return thankYouTemplate(ctx.display_name);
+		case 0:
         default:
-            return `<p>Hi ${escapeHtml(ctx.display_name)}, this is a wedding update.</p>`;
+			return defaultTemplate(ctx.display_name);
     }
-}
-function escapeHtml(s: string) {
-    return s
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
 }
 
 /* -------------------------- Time helpers ------------------------- */
@@ -138,7 +162,7 @@ async function claimAndSendOne(
 
     // 3) We own it — send the email
     try {
-        const html = renderHtml(htmlIndex, { display_name: contact.display_name ?? "" });
+        const html = renderHtml(htmlIndex, { display_name: contact.display_name ?? "", rsvp_deadline: contact.rsvp_deadline ?? ""});
         await resend.emails.send({
             from: env.EMAIL_FROM,
             to: contact.contact_email,
