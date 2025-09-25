@@ -8,29 +8,18 @@ const Icon = ({ path, box = "0 0 24 24" }: { path: string; box?: string }) => (
 );
 
 // Restaurants
-const IconFork = () => (
-  <Icon path="M6 3v4 M9 3v4 M12 3v4 M15 3v4 M6 7h9 M10.5 7v12 M9 19h3" />
-);
-
+const IconFork = () => <Icon path="M6 3v4 M9 3v4 M12 3v4 M15 3v4 M6 7h9 M10.5 7v12 M9 19h3" />;
 // Coffee & drinks
-const IconCoffeeCup = () => (
-  <Icon path="M3 8h13a3 3 0 0 1 0 6H6a3 3 0 0 1-3-3V8zm3 10h10M9 4c0 1 .5 1.5 1.2 2M13 4c0 1 .5 1.5 1.2 2" />
-);
-
+const IconCoffeeCup = () => <Icon path="M3 8h13a3 3 0 0 1 0 6H6a3 3 0 0 1-3-3V8zm3 10h10M9 4c0 1 .5 1.5 1.2 2M13 4c0 1 .5 1.5 1.2 2" />;
 // Things to do
-const IconCompass = () => (
-  <Icon path="M11 3a10 9 0 1 0 0 18 9 9 0 0 0 0-18Zm4 4-3 7-7 3 3-7 7-3Z" />
-);
-
-// Hotels & Travel (bed + little plane)
+const IconCompass = () => <Icon path="M11 3a10 9 0 1 0 0 18 9 9 0 0 0 0-18Zm4 4-3 7-7 3 3-7 7-3Z" />;
+// Hotels & Travel (bed)
 const IconHotelTravel = () => (
   <svg viewBox="0 0 24 24" aria-hidden className="size-5 fill-none stroke-current">
-    {/* bed */}
     <path d="M3 11h18M3 11V8a2 2 0 0 1 2-2h7a3 3 0 0 1 3 3v2m6 0v7H3v-7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
-
-// Filled star (for Avery Recommended)
+// Filled star (Avery Recommended)
 const IconStar = () => (
   <svg viewBox="0 0 24 24" aria-hidden className="inline-block size-4 -mt-0.5">
     <path
@@ -63,7 +52,7 @@ function buildMapsLink(item: RecItem) {
 /* --------------------------------- Page ---------------------------------- */
 export default function Guide() {
   return (
-    <section className="relative bg-[#F2EFE7] min-h-screen overflow-x-hidden">
+    <section className="relative min-h-screen overflow-x-hidden bg-[#F2EFE7]">
       <div
         className="absolute inset-0 z-0 bg-cover bg-[center_55%] sm:bg-[center_40%] md:bg-[center_57.5%]"
         style={{ backgroundImage: "url('/guide-bg.webp?v=3')" }}
@@ -81,87 +70,139 @@ export default function Guide() {
 
       {/* Content */}
       <div className="relative z-20">
-        <header className="mx-auto flex max-w-5xl flex-col items-center px-4 pt-20 text-center text-[#F2EFE7]">
-          <p className="text-sm/6 tracking-widest uppercase opacity-90">In The Area</p>
-          <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Recommendations</h1>
-          <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-            Places we love nearby—good eats, cozy coffee, and little adventures if you're making a weekend of it.
-          </p>
-        </header>
+        {/* Unified vertical spacing container */}
+        <div className="mx-auto max-w-5xl px-4 space-y-4 sm:space-y-6 md:space-y-10">
+          {/* Header */}
+          <header className="flex flex-col items-center pt-16 sm:pt-20 text-center text-[#F2EFE7]">
+            <p className="text-sm/6 tracking-widest uppercase opacity-90">In The Area</p>
+            <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Recommendations</h1>
+            <p className="mt-4 max-w-2xl text-base/7 opacity-95">
+              Places we love nearby—good eats, cozy coffee, and little adventures if you're making a weekend of it.
+            </p>
+          </header>
 
-        {/* Main grid */}
-        <main className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 px-4 pb-24 sm:mt-14 md:grid-cols-5">
-          {/* LEFT column */}
-          <div className="md:col-span-3 space-y-6">
-            {/* Restaurants */}
-            <Card>
-              <CardHeader icon={<IconFork />} title="Restaurants" subtitle="Date-night spots & casual bites" />
-              <div className="mt-5 space-y-4">
-                {restaurants.map((r) => (
-                  <ListRow key={r.name} item={r} />
-                ))}
-              </div>
-            </Card>
-
-            {/* Activities */}
-            <Card>
-              <CardHeader icon={<IconCompass />} title="Things to Do" subtitle="Outdoors, museums, and local gems" />
-              <div className="mt-5 space-y-4">
-                {activities.map((a) => (
-                  <ListRow key={a.name} item={a} />
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* RIGHT column */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Coffee & Drinks */}
-            <Card>
-              <CardHeader icon={<IconCoffeeCup />} title="Coffee & Drinks" />
-              <div className="mt-5 space-y-4">
-                {drinks.map((d) => (
-                  <ListRow key={d.name} item={d} />
-                ))}
-              </div>
-            </Card>
-
-            {/* Legend / Key */}
-            <Card>
-              <CardHeader title="Legend" />
-              <div className="mt-3 text-neutral-800 text-sm">
-                <span className="inline-flex items-center gap-2">
-                  <IconStar /> <span><strong>Avery Recommended</strong></span>
+          {/* Mini legend (mobile only, subtle) */}
+          <div className="md:hidden">
+            <div className="mx-auto w-fit rounded-xl bg-[#FAF7EC]/30 backdrop-blur-[2px] ring-1 ring-black/5 shadow-[0_4px_18px_rgba(0,0,0,0.10)]">
+              <div className="flex items-center gap-2 p-2 text-[11px] text-neutral-800">
+                <span className="inline-flex items-center gap-1.5">
+                  <IconStar />
+                  <span className="font-medium">Avery Recommended</span>
                 </span>
               </div>
-            </Card>
-
-            {/* Hotels & Travel */}
-            <Card>
-              <CardHeader icon={<IconHotelTravel />} title="Hotels & Travel" />
-              <div className="mt-3 space-y-4 text-sm text-neutral-800">
-                <div>
-                  <h3 className="font-semibold">Nearby Hotels</h3>
-                  <ul className="mt-1 list-disc space-y-1 pl-5">
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "Hilton Columbus at Easton" })} target="_blank" rel="noreferrer">Hilton Columbus at Easton</a> - Modern stay, walkable to shopping & dining.</li>
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "Nationwide Hotel and Conference Center", mapsQuery: "Nationwide Hotel & Conference Center, Lewis Center, OH" })} target="_blank" rel="noreferrer">Nationwide Hotel & Conference Center</a> - Quiet retreat, ~15 min north of the city.</li>
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "Courtyard by Marriott Columbus Polaris" })} target="_blank" rel="noreferrer">Courtyard by Marriott Polaris</a> - Convenient for Polaris area.</li>
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "Hampton Inn Columbus-Sunbury" })} target="_blank" rel="noreferrer">Hampton Inn Sunbury/Columbus</a> - Closer budget-friendly option.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Airport Info</h3>
-                  <ul className="mt-1 list-disc space-y-1 pl-5">
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "John Glenn Columbus International Airport", mapsQuery: "CMH airport" })} target="_blank" rel="noreferrer"><strong>John Glenn Columbus Intl. (CMH)</strong></a> - Primary airport (~25-30 min to north suburbs).</li>
-                    <li><a className="underline hover:opacity-80" href={buildMapsLink({ name: "Rickenbacker International Airport", mapsQuery: "LCK airport" })} target="_blank" rel="noreferrer"><strong>Rickenbacker Intl. (LCK)</strong></a> - Limited commercial flights.</li>
-                    <li>Uber/Lyft and car rentals are readily available at CMH.</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
+            </div>
           </div>
-        </main>
+
+          {/* Main grid */}
+          <main className="grid grid-cols-1 gap-6 pb-24 sm:mt-4 md:grid-cols-5">
+            {/* LEFT column */}
+            <div className="space-y-6 md:col-span-3">
+              {/* Restaurants */}
+              <Card>
+                <CardHeader icon={<IconFork />} title="Restaurants" subtitle="Date-night spots & casual bites" />
+                <div className="mt-5 space-y-4">
+                  {restaurants.map((r) => (
+                    <ListRow key={r.name} item={r} />
+                  ))}
+                </div>
+              </Card>
+
+              {/* Activities */}
+              <Card>
+                <CardHeader icon={<IconCompass />} title="Things to Do" subtitle="Outdoors, museums, and local gems" />
+                <div className="mt-5 space-y-4">
+                  {activities.map((a) => (
+                    <ListRow key={a.name} item={a} />
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* RIGHT column */}
+            <div className="space-y-6 md:col-span-2">
+              {/* Coffee & Drinks */}
+              <Card>
+                <CardHeader icon={<IconCoffeeCup />} title="Coffee & Drinks" />
+                <div className="mt-5 space-y-4">
+                  {drinks.map((d) => (
+                    <ListRow key={d.name} item={d} />
+                  ))}
+                </div>
+              </Card>
+
+              {/* Legend / Key (desktop only) */}
+              <div className="hidden md:block">
+                <Card>
+                  <CardHeader title="Legend" />
+                  <div className="mt-3 text-sm text-neutral-800">
+                    <span className="inline-flex items-center gap-2">
+                      <IconStar /> <span><strong>Avery Recommended</strong></span>
+                    </span>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Hotels & Travel */}
+              <Card>
+                <CardHeader icon={<IconHotelTravel />} title="Hotels & Travel" />
+                <div className="mt-3 space-y-4 text-sm text-neutral-800">
+                  <div>
+                    <h3 className="font-semibold">Nearby Hotels</h3>
+                    <ul className="mt-1 list-disc space-y-1 pl-5">
+                      <li>
+                        <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Hilton Columbus at Easton" })} target="_blank" rel="noreferrer">
+                          Hilton Columbus at Easton
+                        </a>{" "}
+                        - Modern stay, walkable to shopping & dining.
+                      </li>
+                      <li>
+                        <a
+                          className="underline hover:opacity-80"
+                          href={buildMapsLink({ name: "Nationwide Hotel and Conference Center", mapsQuery: "Nationwide Hotel & Conference Center, Lewis Center, OH" })}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Nationwide Hotel & Conference Center
+                        </a>{" "}
+                        - Quiet retreat, ~15 min north of the city.
+                      </li>
+                      <li>
+                        <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Courtyard by Marriott Columbus Polaris" })} target="_blank" rel="noreferrer">
+                          Courtyard by Marriott Polaris
+                        </a>{" "}
+                        - Convenient for Polaris area.
+                      </li>
+                      <li>
+                        <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Hampton Inn Columbus-Sunbury" })} target="_blank" rel="noreferrer">
+                          Hampton Inn Sunbury/Columbus
+                        </a>{" "}
+                        - Closer budget-friendly option.
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Airport Info</h3>
+                    <ul className="mt-1 list-disc space-y-1 pl-5">
+                      <li>
+                        <a className="underline hover:opacity-80" href={buildMapsLink({ name: "John Glenn Columbus International Airport", mapsQuery: "CMH airport" })} target="_blank" rel="noreferrer">
+                          <strong>John Glenn Columbus Intl. (CMH)</strong>
+                        </a>{" "}
+                        - Primary airport (~25-30 min to north suburbs).
+                      </li>
+                      <li>
+                        <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Rickenbacker International Airport", mapsQuery: "LCK airport" })} target="_blank" rel="noreferrer">
+                          <strong>Rickenbacker Intl. (LCK)</strong>
+                        </a>{" "}
+                        - Limited commercial flights.
+                      </li>
+                      <li>Uber/Lyft and car rentals are readily available at CMH.</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </main>
+        </div>
       </div>
     </section>
   );
@@ -180,9 +221,7 @@ function Card({ children }: { children: React.ReactNode }) {
 function CardHeader({ icon, title, subtitle }: { icon?: React.ReactNode; title: string; subtitle?: string }) {
   return (
     <div className="flex items-center gap-3">
-      {icon && (
-        <div className="flex size-9 items-center justify-center rounded-xl bg-black/5 text-[#2C2A28]">{icon}</div>
-      )}
+      {icon && <div className="flex size-9 items-center justify-center rounded-xl bg-black/5 text-[#2C2A28]">{icon}</div>}
       <div>
         <h2 className="text-lg font-semibold text-[#2C2A28]">{title}</h2>
         {subtitle && <p className="text-xs text-neutral-600">{subtitle}</p>}
@@ -219,10 +258,7 @@ function ListRow({ item }: { item: RecItem }) {
               </span>
             )}
             {item.tags?.slice(0, 3).map((t) => (
-              <span
-                key={t}
-                className="rounded-full bg-[#E3E0D1] px-2 py-0.5 text-[11px] font-medium text-neutral-800"
-              >
+              <span key={t} className="rounded-full bg-[#E3E0D1] px-2 py-0.5 text-[11px] font-medium text-neutral-800">
                 {t}
               </span>
             ))}
@@ -236,7 +272,6 @@ function ListRow({ item }: { item: RecItem }) {
 }
 
 /* --------------------------------- Data ---------------------------------- */
-/* All items now click to Google Maps (override city with mapsQuery if needed). */
 
 const restaurants: RecItem[] = [
   { name: "Dirty Frank's Hot Dog Palace", price: "$", tags: ["Casual", "Downtown"], avery: true, mapsQuery: "Dirty Frank’s Hot Dog Palace, Columbus, OH" },
