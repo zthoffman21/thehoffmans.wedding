@@ -30,7 +30,7 @@ export function defaultTemplate(guest_name: string) {
       <h1 style="font-size:20px;">Avery & Zach — Update</h1>
     </div>
     <div class="pad">
-      <p>Hi${guest_name},</p>
+      <p>Hi ${guest_name},</p>
       <p>We wanted to share a quick update related to our wedding on <strong>July 17, 2026</strong>.</p>
       <p>If you were expecting a specific message (like an RSVP reminder, logistics, or photo upload request), don't worry, this email ensures you see the essentials even if something went off-script.</p>
       <p>
@@ -72,7 +72,7 @@ export function rsvpDeadlineReminderTemplate(guest_name: string, rsvp_deadline: 
     </div>
     <div class="pad">
       <p>Hi ${guest_name},</p>
-      <p>Thanks again for your RSVP for <strong>July 17, 2026</strong>! If your plans or details have changed, you can update your RSVP until:</p>
+      <p>Thanks again for your RSVP! If your plans or details have changed, you can update your RSVP until:</p>
       <p><span class="badge">${rsvp_deadline} (EST)</span></p>
       <ul>
         <li>Update attendance for you or your party</li>

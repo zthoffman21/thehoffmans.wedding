@@ -33,15 +33,24 @@ export function formatNYDateShort(utcIso: string): string {
 
 /**
  * Convert a UTC ISO string to New York time zone
- * and return as "Month Day" (e.g., September 24).
+ * and return as "Month Day, YYYY at h:mm AM/PM".
+ * Example: "September 24, 2025 at 6:30 PM"
  */
-export function formatNYDateLong(utcIso: string): string {
+export function formatNYDateTimeLong(utcIso: string): string {
   const d = new Date(utcIso);
-  return new Intl.DateTimeFormat("en-US", {
+  const datePart = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     month: "long",
     day: "numeric",
+    year: "numeric",
   }).format(d);
+  const timePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(d);
+  return `${datePart} at ${timePart}`;
 }
 
 
