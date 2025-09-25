@@ -1,6 +1,6 @@
 export const EMAIL_SUBJECTS: Record<number, string> = {
   0: "Quick update from Avery & Zach",
-  1: "You can update your RSVP until {{rsvp_deadline_short}}",
+  1: "RSVP deadline is coming up!",
   2: "Final details for the wedding (parking, timing, map)",
   3: "Got wedding photos? We'd love to see them 📸",
   4: "Thank you for celebrating with us ❤️",

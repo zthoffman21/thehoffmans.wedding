@@ -44476,7 +44476,7 @@ var init_reminder_html = __esm({
     init_functionsRoutes_0_10079449694519549();
     EMAIL_SUBJECTS = {
       0: "Quick update from Avery & Zach",
-      1: "You can update your RSVP until {{rsvp_deadline_short}}",
+      1: "RSVP deadline is coming up!",
       2: "Final details for the wedding (parking, timing, map)",
       3: "Got wedding photos? We'd love to see them \u{1F4F8}",
       4: "Thank you for celebrating with us \u2764\uFE0F"
@@ -44968,10 +44968,10 @@ var init_functionsRoutes_0_10079449694519549 = __esm({
   }
 });
 
-// ../.wrangler/tmp/bundle-RS7mvS/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-4P5q4e/middleware-loader.entry.ts
 init_functionsRoutes_0_10079449694519549();
 
-// ../.wrangler/tmp/bundle-RS7mvS/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-4P5q4e/middleware-insertion-facade.js
 init_functionsRoutes_0_10079449694519549();
 
 // ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
@@ -45467,7 +45467,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-RS7mvS/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-4P5q4e/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -45500,7 +45500,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-RS7mvS/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-4P5q4e/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
