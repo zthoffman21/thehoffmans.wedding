@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
 const WEDDING_ISO = "2026-07-17T00:00:00-04:00";
@@ -10,7 +10,7 @@ function countdownLabel(targetISO: string) {
     const diff = target.getTime() - now.getTime();
     if (diff <= 0) return "Wedding day! 🎉";
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days == 1) return `In ${days} Day`;
+    if (days === 1) return `In ${days} Day`;
     return `In ${days} Days`;
 }
 
@@ -18,6 +18,7 @@ export default function NavBar() {
     const [open, setOpen] = useState(false);
     const [elevated, setElevated] = useState(false);
     const [countdown, setCountdown] = useState(() => countdownLabel(WEDDING_ISO));
+    const location = useLocation();
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -68,6 +69,32 @@ export default function NavBar() {
         { to: "/gallery", label: "Gallery" },
     ];
 
+    // Route-aware click handler factory
+    const onNavClick = useCallback(
+        (to: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+            // Always close the mobile panel (no-op on desktop)
+            setOpen(false);
+
+            // If clicking the link to the *current* path, intercept and scroll.
+            const [path, hash] = to.split("#");
+            const samePath = location.pathname === path;
+
+            if (!samePath) return; // normal navigation when target is different
+
+            if (hash) {
+                const el = document.getElementById(hash);
+                if (el) {
+                    e.preventDefault();
+                    el.scrollIntoView({ behavior: "smooth" });
+                }
+            } else {
+                e.preventDefault();
+                window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+            }
+        },
+        [location.pathname]
+    );
+
     return (
         <header
             className={`sticky top-0 z-999 transition-shadow ${
@@ -84,7 +111,7 @@ export default function NavBar() {
                 <nav className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between py-3">
                         {/* Brand / Monogram */}
-                        <Link to="/" className="flex items-end gap-2">
+                        <Link to="/" onClick={onNavClick("/")} className="flex items-end gap-2">
                             <span
                                 className="leading-none text-[28px] sm:text-[32px] text-ink"
                                 style={{ fontFamily: '"Dancing Script", cursive' }}
@@ -110,6 +137,7 @@ export default function NavBar() {
                                 <NavLink
                                     key={l.to}
                                     to={l.to}
+                                    onClick={onNavClick(l.to)}
                                     className={({ isActive }) =>
                                         `${baseLink} ${isActive ? active : idle} ${tapeUnderline(
                                             isActive
@@ -121,7 +149,11 @@ export default function NavBar() {
                             ))}
 
                             {/* RSVP emphasized as ribbon */}
-                            <Link to="/rsvp" className={`ml-2 ${rsvpBtn}`}>
+                            <Link
+                                to="/rsvp"
+                                onClick={onNavClick("/rsvp")}
+                                className={`ml-2 ${rsvpBtn}`}
+                            >
                                 RSVP
                             </Link>
                         </div>
@@ -186,7 +218,7 @@ export default function NavBar() {
                                 <NavLink
                                     key={l.to}
                                     to={l.to}
-                                    onClick={() => setOpen(false)}
+                                    onClick={onNavClick(l.to)}
                                     className={({ isActive }) =>
                                         `${baseLink} ${isActive ? active : idle} ${tapeUnderline(
                                             isActive
@@ -199,7 +231,7 @@ export default function NavBar() {
 
                             <Link
                                 to="/rsvp"
-                                onClick={() => setOpen(false)}
+                                onClick={onNavClick("/rsvp")}
                                 className={`mt-2 ${rsvpBtn}`}
                             >
                                 RSVP
