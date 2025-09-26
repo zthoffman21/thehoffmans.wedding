@@ -293,8 +293,6 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
             if (!when) continue;
 
             if (now >= when) {
-                const subject = r.reminder_title;
-
                 // IMPORTANT: use the intended send date as the log's day bucket
                 // so it doesn't re-send on later days after success.
                 const dayKey = ymdNY(when);
@@ -322,11 +320,10 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
                 const deadline = toDate(c.rsvp_deadline);
                 if (!deadline) continue;
                 const delta = daysUntil(deadline, now);
-                if (r.days_out != null && delta <= r.days_out) dueToday.push(c);
+                if (delta === r.days_out) dueToday.push(c);
             }
 
             if (dueToday.length) {
-                const subject = r.reminder_title;
                 const dayKey = ymdNY(now);
 
                 await sendToAllWithLog(
