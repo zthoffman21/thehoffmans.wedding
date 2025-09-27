@@ -120,7 +120,7 @@ export default function InfoPage() {
                   />
                   <AttireCard
                     title="General Tips"
-                    items={["Wear something that makes you feel good", "The ceremony is outdoors so be prepared"]}
+                    items={["Wear something that makes you feel good", "The ceremony is outdoors, so dress accordingly"]}
                   />
                 </div>
               </Card>
