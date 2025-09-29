@@ -8,7 +8,7 @@ import {
     type RSVPPost,
 } from "../api/rsvp";
 
-const SITE_RSVP_DEADLINE_ISO = "2026-06-15T23:59:59-04:00";
+const SITE_RSVP_DEADLINE_ISO = "2026-06-02T03:59:59.000Z";
 
 // --------------------------- Utilities ---------------------------
 // --------------------------- Validation ---------------------------

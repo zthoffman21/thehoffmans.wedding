@@ -31,7 +31,7 @@ export default function Landing() {
             </h1>
 			
 		  	<div className="grid">
-				<p className="text-sm/6 tracking-widest uppercase opacity-90">July 17, 2025 | 5:00 PM</p>
+				<p className="text-sm/6 tracking-widest uppercase opacity-90">July 17, 2026 | 5:00 PM</p>
 				<div className="mt-8 flex items-center justify-center">
 				<PerforatedButton to="/rsvp" variant="transparent" arrowColor="#fcfbf7d8">
 					RSVP
