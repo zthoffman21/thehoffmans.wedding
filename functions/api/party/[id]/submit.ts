@@ -53,12 +53,12 @@ function summarizeCounts(members: MemberRSVP[]) {
     return c;
 }
 
-function trRow(guest: string, event: string, status: string, note?: string) {
+function trRow(guest: string, ceremony: string, reception: string, note?: string) {
   return `
     <tr>
       <td>${escapeHtml(guest)}</td>
-      <td>${escapeHtml(event)}</td>
-      <td>${escapeHtml(status)}</td>
+      <td>${escapeHtml(ceremony)}</td>
+      <td>${escapeHtml(reception)}</td>
       <td class="right">${escapeHtml(note ?? "")}</td>
     </tr>`;
 }
@@ -125,34 +125,23 @@ export function renderRSVPConfirmationHTML(payload: RSVPEmailPayload & {
     const name = m.memberId; // you may swap to display name if you have it
     const note = [m.dietary, m.notes].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "";
 
+    var ceremony = false;
+    var reception = false;
     if (typeof m.attending.ceremony === "boolean") {
-      rows.push(
-        trRow(
-          name,
-          "Ceremony",
-          m.attending.ceremony ? "Attending ✓" : "Not attending ✗",
-          note
-        )
-      );
+        m.attending.ceremony ? ceremony = true : ceremony = false;
     }
     if (typeof m.attending.reception === "boolean") {
+        m.attending.reception ? reception = true : reception = false;
+    }
       rows.push(
         trRow(
           name,
-          "Reception",
+          m.attending.ceremony ? "Attending ✓" : "Not attending ✗",
           m.attending.reception ? "Attending ✓" : "Not attending ✗",
           note
         )
-      );
-    }
+    );
 
-    // If neither field is boolean (all null), add a single “—” row so the guest still sees their entry.
-    if (
-      typeof m.attending.ceremony !== "boolean" &&
-      typeof m.attending.reception !== "boolean"
-    ) {
-      rows.push(trRow(name, "—", "—", note));
-    }
   }
 
   const contactBlock =
@@ -259,7 +248,7 @@ export function renderRSVPConfirmationHTML(payload: RSVPEmailPayload & {
                     <h1 class="h1">RSVP received — thanks, ${escapeHtml(partyName)}!</h1>
                     <p class="muted" style="margin:0 0 16px;">
                       We received your RSVP on ${escapeHtml(submittedWhen)} (ET).
-                      You can review or modify your RSVP anytime using your secure link below.
+                      You can review or modify your RSVP anytime until the deadline.
                     </p>
 
                     ${partyNotesBlock}
@@ -270,8 +259,8 @@ export function renderRSVPConfirmationHTML(payload: RSVPEmailPayload & {
                       <thead>
                         <tr>
                           <th style="border-top-left-radius:8px;">Guest</th>
-                          <th>Event</th>
-                          <th>Status</th>
+                          <th>Ceremony</th>
+                          <th>Reception</th>
                           <th class="right" style="border-top-right-radius:8px;">Notes</th>
                         </tr>
                       </thead>
@@ -668,7 +657,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                     contactEmail: contactEmail,
                     contactPhone: contactPhone,
                     members: parsed.data.members,
-                    rsvpLink: `https://thehoffmans.wedding/rsvp/party/${party.id}`,
+                    rsvpLink: `https://thehoffmans.wedding/rsvp`,
                     infoLink: "https://thehoffmans.wedding/info",
                     coupleNames: "Avery & Zach",
                     coupleEmail: "zachhoffman@ymail.com",
