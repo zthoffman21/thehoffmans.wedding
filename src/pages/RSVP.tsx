@@ -604,10 +604,10 @@ function ConfirmationSection({ onReset }: { onReset: () => void }) {
                 />
                 <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
                 <p className="mt-2 text-sm text-ink/70">
-                    Thank you! Your responses have been recorded. You can close this page or look up
+                    Thank you! Your response have been recorded. You can close this page or look up
                     your invitation again to make changes.
                 </p>
-                <p>
+                <p className="mt-4 text-sm text-ink/70">
                     Look in your inbox for a confirmation email. It may take a few minutes to
                     arrive, and be sure to check your spam/junk folder just in case.
                 </p>
