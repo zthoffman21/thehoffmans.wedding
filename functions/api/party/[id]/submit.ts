@@ -42,20 +42,6 @@ function dotTag(text: string) {
     )}</span>`;
 }
 
-function attendanceChips(m: MemberRSVP) {
-    const chips: string[] = [];
-    const hasMulti =
-        typeof m.attending.ceremony === "boolean" || typeof m.attending.reception === "boolean";
-    if (hasMulti) {
-        if (m.attending.ceremony === true) chips.push(dotTag("Ceremony ✓"));
-        else if (m.attending.ceremony === false) chips.push(dotTag("Ceremony ✗"));
-        if (m.attending.reception === true) chips.push(dotTag("Reception ✓"));
-        else if (m.attending.reception === false) chips.push(dotTag("Reception ✗"));
-    } else if (typeof m.attending === "boolean") {
-        chips.push(dotTag(m.attending ? "Attending ✓" : "Not attending ✗"));
-    }
-}
-
 function summarizeCounts(members: MemberRSVP[]) {
     const c = {
         total: members.length,
@@ -66,6 +52,305 @@ function summarizeCounts(members: MemberRSVP[]) {
     };
     return c;
 }
+
+function trRow(guest: string, event: string, status: string, note?: string) {
+  return `
+    <tr>
+      <td>${escapeHtml(guest)}</td>
+      <td>${escapeHtml(event)}</td>
+      <td>${escapeHtml(status)}</td>
+      <td class="right">${escapeHtml(note ?? "")}</td>
+    </tr>`;
+}
+
+// (Optional) keep this since it's referenced elsewhere; now it returns a string.
+function attendanceChips(m: MemberRSVP) {
+  const chips: string[] = [];
+  const hasMulti =
+    typeof m.attending.ceremony === "boolean" || typeof m.attending.reception === "boolean";
+  if (hasMulti) {
+    if (m.attending.ceremony === true) chips.push(dotTag("Ceremony ✓"));
+    else if (m.attending.ceremony === false) chips.push(dotTag("Ceremony ✗"));
+    if (m.attending.reception === true) chips.push(dotTag("Reception ✓"));
+    else if (m.attending.reception === false) chips.push(dotTag("Reception ✗"));
+  }
+  return chips.join(" ");
+}
+
+/**
+ * Guest-facing confirmation email HTML.
+ * Usage:
+ *   renderRSVPConfirmationHTML({
+ *     partyName, members, contactEmail, contactPhone, notes, submittedAt,
+ *     rsvpLink: `https://thehoffmans.wedding/rsvp/party/${partyId}`,
+ *     infoLink: "https://thehoffmans.wedding",
+ *     coupleNames: "Avery & Zach",
+ *     coupleEmail: "hello@thehoffmans.wedding",
+ *     couplePhone: null,
+ *     venueCity: "Lancaster, PA",
+ *     weddingDateLong: "July 17, 2026",
+ *     rsvpDeadlineLong: "June 1, 2026 (11:59 PM ET)"
+ *   })
+ */
+export function renderRSVPConfirmationHTML(payload: RSVPEmailPayload & {
+  rsvpLink: string;
+  infoLink?: string | null;
+  coupleNames?: string | null;
+  coupleEmail?: string | null;
+  couplePhone?: string | null;
+  venueCity?: string | null;
+  weddingDateLong?: string | null;
+  rsvpDeadlineLong?: string | null;
+}) {
+  const {
+    partyName,
+    members,
+    contactEmail,
+    contactPhone,
+    notes,
+    submittedAt,
+    rsvpLink,
+    infoLink = null,
+    coupleNames = "Avery & Zach",
+    coupleEmail = null,
+    couplePhone = null,
+    venueCity = null,
+    weddingDateLong = null,
+    rsvpDeadlineLong = null,
+  } = payload;
+
+  // Build table rows: one row per member x (ceremony/reception) with known boolean
+  const rows: string[] = [];
+  for (const m of members) {
+    const name = m.memberId; // you may swap to display name if you have it
+    const note = [m.dietary, m.notes].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "";
+
+    if (typeof m.attending.ceremony === "boolean") {
+      rows.push(
+        trRow(
+          name,
+          "Ceremony",
+          m.attending.ceremony ? "Attending ✓" : "Not attending ✗",
+          note
+        )
+      );
+    }
+    if (typeof m.attending.reception === "boolean") {
+      rows.push(
+        trRow(
+          name,
+          "Reception",
+          m.attending.reception ? "Attending ✓" : "Not attending ✗",
+          note
+        )
+      );
+    }
+
+    // If neither field is boolean (all null), add a single “—” row so the guest still sees their entry.
+    if (
+      typeof m.attending.ceremony !== "boolean" &&
+      typeof m.attending.reception !== "boolean"
+    ) {
+      rows.push(trRow(name, "—", "—", note));
+    }
+  }
+
+  const contactBlock =
+    contactEmail || contactPhone
+      ? `<p class="muted" style="margin:0;">
+           Party contact:
+           ${contactEmail ? `<a href="mailto:${escapeHtml(contactEmail)}" style="color:#1F1A17;">${escapeHtml(contactEmail)}</a>` : ""}
+           ${contactEmail && contactPhone ? " · " : ""}
+           ${contactPhone ? `<a href="tel:${escapeHtml(contactPhone)}" style="color:#1F1A17;">${escapeHtml(contactPhone)}</a>` : ""}
+         </p>`
+      : "";
+
+  const partyNotesBlock =
+    (notes ?? "").trim().length > 0
+      ? `
+        <div style="height:16px;"></div>
+        <div style="background:#FAF7EC;border-radius:10px;padding:12px 14px;">
+          <strong>Party Notes:</strong>
+          <div class="muted">${escapeHtml(notes!)}</div>
+        </div>`
+      : "";
+
+  const helpBlock = (coupleEmail || couplePhone)
+    ? `<p style="margin:0;">
+         ${coupleEmail ? `<a href="mailto:${escapeHtml(coupleEmail)}" style="color:#1F1A17;">Email us</a>` : ""}
+         ${coupleEmail && couplePhone ? " · " : ""}
+         ${couplePhone ? `<a href="tel:${escapeHtml(couplePhone)}" style="color:#1F1A17;">Call/Text</a>` : ""}
+       </p>`
+    : "";
+
+  const preheader = "You can review or change your RSVP anytime using your secure link.";
+
+  const submittedWhen = fmtNY(submittedAt);
+
+  return `
+    <!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width"/>
+  <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+  <title>RSVP Confirmation</title>
+  <style>
+    html, body { margin:0 !important; padding:0 !important; height:100% !important; width:100% !important; }
+    * { -ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    a { text-decoration:none; }
+    .bg { background:#FAF7EC; }
+    .wrap { width:100%; max-width:640px; margin:0 auto; }
+    .card { background:#ffffff; border-radius:14px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .pad-24 { padding:24px; }
+    .h1 { font-size:24px; line-height:1.25; margin:0 0 12px; color:#1F1A17; }
+    .muted { color:#5a544e; }
+    .hr { height:1px; background:#eee7d9; line-height:1px; font-size:0; }
+    .btn { display:inline-block; padding:12px 18px; border-radius:10px; background:#1F1A17; color:#ffffff !important; font-weight:600; }
+    .btn-light { display:inline-block; padding:12px 18px; border-radius:10px; background:#EFE9DB; color:#1F1A17 !important; font-weight:600; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:12px; color:#6b665f; }
+    .sum { width:100%; border-collapse:collapse; }
+    .sum th, .sum td { text-align:left; padding:10px 12px; border-bottom:1px solid #f1eadf; }
+    .sum th { background:#FAF7EC; font-weight:600; color:#1F1A17; }
+    .sum .right { text-align:right; }
+    @media screen and (max-width: 520px){
+      .pad-24 { padding:18px !important; }
+      .h1 { font-size:22px !important; }
+      .stack { display:block !important; width:100% !important; }
+      .center { text-align:center !important; }
+      .btn, .btn-light { width:100% !important; text-align:center !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .bg { background:#191715; }
+      .card { background:#1F1A17; }
+      .h1, .muted, td, th, p, li, a { color:#EFE9DB !important; }
+      .hr { background:#2a2521; }
+      .sum th { background:#2a2521; }
+      .btn { background:#EFE9DB; color:#1F1A17 !important; }
+      .btn-light { background:#3a332e; color:#EFE9DB !important; }
+    }
+  </style>
+  <!--[if mso]>
+  <style>.btn, .btn-light { font-family: Arial, sans-serif !important; }</style>
+  <![endif]-->
+</head>
+<body class="bg" style="background:#FAF7EC;">
+  <div style="display:none; visibility:hidden; opacity:0; overflow:hidden; max-height:0; max-width:0; font-size:1px; line-height:1px; color:#FAF7EC;">
+    ${escapeHtml(preheader)}
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="bg" style="background:#FAF7EC;">
+    <tr>
+      <td align="center" style="padding:28px 16px;">
+        <table role="presentation" class="wrap" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" style="padding-bottom:16px; font:600 14px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#6b665f;">
+              ${escapeHtml(coupleNames || "")}
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <table role="presentation" width="100%" class="card" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td class="pad-24" style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#1F1A17;">
+                    <h1 class="h1">RSVP received — thanks, ${escapeHtml(partyName)}!</h1>
+                    <p class="muted" style="margin:0 0 16px;">
+                      We received your RSVP on ${escapeHtml(submittedWhen)} (ET).
+                      You can review or modify your RSVP anytime using your secure link below.
+                    </p>
+
+                    ${partyNotesBlock}
+                    ${contactBlock ? `<div style="height:10px;"></div>${contactBlock}` : ""}
+
+                    <div style="height:12px;"></div>
+                    <table role="presentation" class="sum">
+                      <thead>
+                        <tr>
+                          <th style="border-top-left-radius:8px;">Guest</th>
+                          <th>Event</th>
+                          <th>Status</th>
+                          <th class="right" style="border-top-right-radius:8px;">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows.join("")}
+                      </tbody>
+                    </table>
+
+                    <div style="height:22px;"></div>
+
+                    <table role="presentation" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td class="stack">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${escapeHtml(
+                            rsvpLink
+                          )}" style="height:44px;v-text-anchor:middle;width:210px;" arcsize="14%" stroke="f" fillcolor="#1F1A17">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:700;">Review / Modify RSVP</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-- -->
+                          <a class="btn" href="${escapeHtml(rsvpLink)}" target="_blank">Review / Modify RSVP</a>
+                          <!--<![endif]-->
+                        </td>
+                        ${
+                          infoLink
+                            ? `<td width="12" class="stack" style="font-size:0; line-height:0;">&nbsp;</td>
+                               <td class="stack">
+                                 <a class="btn-light" href="${escapeHtml(infoLink)}" target="_blank">Wedding Details</a>
+                               </td>`
+                            : ""
+                        }
+                      </tr>
+                    </table>
+
+                    <div style="height:18px;"></div>
+                    ${
+                      rsvpDeadlineLong
+                        ? `<p class="muted" style="margin:0;">Keep this link handy—it's unique to your party so you can make changes up to ${escapeHtml(
+                            rsvpDeadlineLong
+                          )}.</p>`
+                        : ""
+                    }
+
+                    <div style="height:20px;"></div>
+                    <div class="hr"></div>
+                    <div style="height:16px;"></div>
+
+                    <p class="muted" style="margin:0 0 6px;">Questions or need a hand?</p>
+                    ${helpBlock}
+                    <div style="height:8px;"></div>
+                    <p class="mono">Submitted: ${escapeHtml(submittedWhen)} (ET)</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          ${
+            venueCity || weddingDateLong
+              ? `<tr>
+                   <td align="center" style="padding:14px 8px; font:12px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#6b665f;">
+                     ${venueCity ? `${escapeHtml(venueCity)} · ` : ""}${escapeHtml(
+                  weddingDateLong ?? ""
+                )}
+                   </td>
+                 </tr>`
+              : ""
+          }
+          <tr><td style="height:8px;"></td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 
 export function renderRSVPEmailHTML(payload: RSVPEmailPayload, adminUrl: string, csvUrl: string) {
     const { partyName, submissionId, submittedAt, contactEmail, contactPhone, notes, members } =
@@ -356,7 +641,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
         const adminUrl = "https://thehoffmans.wedding/admin";
         const csvUrl = "https://thehoffmans.wedding/api/admin/export/latest-rsvps";
 
-        const html = renderRSVPEmailHTML(
+        var html = renderRSVPEmailHTML(
             {
                 partyName: party.display_name,
                 submissionId: submissionId,
@@ -373,6 +658,32 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
             subject: `New RSVP: ${party.display_name}`,
             html,
         });
+
+        if (contactEmail && parsed.data.reminderOptIn) {
+            html = renderRSVPConfirmationHTML(
+                {
+                    partyName: party.display_name,
+                    submissionId: submissionId,
+                    submittedAt: new Date().toISOString(),
+                    contactEmail: contactEmail,
+                    contactPhone: contactPhone,
+                    members: parsed.data.members,
+                    rsvpLink: `https://thehoffmans.wedding/rsvp/party/${party.id}`,
+                    infoLink: "https://thehoffmans.wedding/info",
+                    coupleNames: "Avery & Zach",
+                    coupleEmail: "zachhoffman@ymail.com",
+                    couplePhone: "610-507-7219",
+                    venueCity: "Columbus, OH",
+                    weddingDateLong: "July 17, 2026",
+                    rsvpDeadlineLong: party.rsvp_deadline,
+                }
+            )
+            await sendEmail(env, {
+                to: contactEmail,
+                subject: `Your RSVP for ${party.display_name} received`,
+                html,
+            });
+        }
 
         return json({ ok: true, submissionId });
     } catch (err: any) {
