@@ -607,6 +607,14 @@ function ConfirmationSection({ onReset }: { onReset: () => void }) {
                     Thank you! Your responses have been recorded. You can close this page or look up
                     your invitation again to make changes.
                 </p>
+                <p>
+                    Look in your inbox for a confirmation email. It may take a few minutes to
+                    arrive, and be sure to check your spam/junk folder just in case.
+                </p>
+                <p className="mt-4 text-sm text-ink/70">
+                    If you have any questions, please reach out to us
+                    at <a href="mailto:zachhoffman@ymail.com" className="underline"> zachhoffman@ymail.com </a>.
+                </p>
                 <button
                     ref={btnRef}
                     onClick={onReset}

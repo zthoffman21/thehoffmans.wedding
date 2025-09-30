@@ -12,8 +12,8 @@ DROP TABLE IF EXISTS parties;
 -- DROP TABLE IF EXISTS settings;
 -- DROP TABLE IF EXISTS rate_log;
 
-DROP TABLE IF EXISTS reminder_sends;
-DROP TABLE IF EXISTS reminder_log;
+-- DROP TABLE IF EXISTS reminder_sends;
+-- DROP TABLE IF EXISTS reminder_log;
 
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,

@@ -10,10 +10,7 @@ VALUES
   ('m_avery',   'p_avery',    'Avery Tucker',       0, NULL, 1, 1, 1),
   ('m_averyp',  'p_avery',    'Zachary Hoffman',    1, 'Avery Tucker', 2, 1, 1);
   
-INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, html_content_index) VALUES
-  ('TEST: Cron', '2025-09-17T05:14:25.000Z', NULL, 3),
-  ('TEST: Set Day', '2025-09-17T05:14:25.000Z', NULL, 3),
-  ('TEST: Days Out', NULL, 1, 3);
-  -- ('RSVP Reminder 30 Days', NULL, 30, 1),
-  -- ('RSVP Reminder 7 Days', NULL, 7, 2),
-  -- ('RSVP Reminder 1 Day', NULL, 1, 3);
+-- INSERT OR IGNORE INTO reminder_sends(reminder_title, send_date, days_out, html_content_index) VALUES
+--   ('TEST: Cron', '2025-09-17T05:14:25.000Z', NULL, 3),
+--   ('TEST: Set Day', '2025-09-17T05:14:25.000Z', NULL, 3),
+--   ('TEST: Days Out', NULL, 1, 3);
