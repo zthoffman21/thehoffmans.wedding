@@ -662,7 +662,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                     coupleNames: "Avery & Zach",
                     coupleEmail: "zachhoffman@ymail.com",
                     couplePhone: "610-507-7219",
-                    venueCity: "Columbus, OH",
+                    venueCity: "Ostrander, OH",
                     weddingDateLong: "July 17, 2026",
                     rsvpDeadlineLong: party.rsvp_deadline,
                 }
