@@ -1,69 +1,57 @@
-# React + TypeScript + Vite
+# 💍 thehoffmans.wedding
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern wedding website and guest portal.  
+Built with **React + TypeScript + Vite** on **Cloudflare Pages / Workers**, powered by **D1 (SQLite)**, **R2 (storage)**, and **Resend (email)**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## Expanding the ESLint configuration
+### 🖥️ Public Site
+- Elegant **landing**, **invite**, and **info** pages with responsive Tailwind design.
+- **RSVP Portal** — search by family/name, per‑event toggles, dietary notes.
+- **Gallery & Timeline** — photos served from R2 storage.
+- **Guide & Travel** — venue maps, lodging, schedule highlights.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🔒 Admin Dashboard
+- Secured with **Cloudflare Access**.
+- Manage parties, members, RSVPs, dietary notes, and contact info.
+- Email confirmations and reminders via **Resend**.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 💌 Email Automation
+- Resend integration for transactional messages:
+  - RSVP confirmations
+  - Reminder emails
+  - Optional post‑event updates
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🧱 Tech Stack
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Layer | Technologies |
+|:------|:----------------|
+| **Frontend** | React + TypeScript + Vite · Tailwind CSS |
+| **Backend / API** | Cloudflare Pages Functions (`functions/api/*`) |
+| **Jobs / Cron** | Cloudflare Workers (`workers/reminders-cron/*`) |
+| **Database** | Cloudflare D1 (SQLite) — see `schema.sql`, `seed.sql` |
+| **Storage** | Cloudflare R2 |
+| **Email** | Resend API |
+| **Deployment** | Cloudflare Pages + Wrangler CLI |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📁 Project Structure
+
+```text
+.
+├─ functions/              # Cloudflare Pages Functions (API)
+│  └─ api/
+├─ workers/                # Scheduled/cron Workers
+│  └─ reminders-cron/
+├─ src/                    # React + TypeScript app
+├─ public/                 # Static assets
+├─ schema.sql              # D1 schema
+├─ seed.sql                # D1 seed data
+├─ wrangler.toml           # CF bindings (D1/R2/secrets) & routes
+└─ README.md
 ```
