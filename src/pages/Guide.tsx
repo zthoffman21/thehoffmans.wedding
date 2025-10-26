@@ -8,11 +8,11 @@ const Icon = ({ path, box = "0 0 24 24" }: { path: string; box?: string }) => (
 );
 
 // Restaurants
-const IconFork = () => <Icon path="M6 3v4 M9 3v4 M12 3v4 M15 3v4 M6 7h9 M10.5 7v12 M9 19h3" />;
+const IconFork = () => <Icon path="M7.5 3v4 M10.5 3v4 M13.5 3v4 M16.5 3v4 M7.5 7h9 M12 7v12 M10.5 19h3" />;
 // Coffee & drinks
-const IconCoffeeCup = () => <Icon path="M3 8h13a3 3 0 0 1 0 6H6a3 3 0 0 1-3-3V8zm3 10h10M9 4c0 1 .5 1.5 1.2 2M13 4c0 1 .5 1.5 1.2 2" />;
+const IconCoffeeCup = () => <Icon path="M4 8h13a3 3 0 0 1 0 6H7a3 3 0 0 1-3-3V8zm3 10h10M10 4c0 1 .5 1.5 1.2 2M14 4c0 1 .5 1.5 1.2 2" />;
 // Things to do
-const IconCompass = () => <Icon path="M11 3a10 9 0 1 0 0 18 9 9 0 0 0 0-18Zm4 4-3 7-7 3 3-7 7-3Z" />;
+const IconCompass = () => <Icon path="M12.5 3a10 9 0 1 0 0 18 9 9 0 0 0 0-18Zm4.75 4-3 7-7 3 3-7 7-3Z" />;
 // Hotels & Travel (bed)
 const IconHotelTravel = () => (
   <svg viewBox="0 0 24 24" aria-hidden className="size-5 fill-none stroke-current">

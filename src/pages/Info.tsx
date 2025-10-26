@@ -16,7 +16,7 @@ const IconMapPin = () => (
   <Icon path="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10zm0-8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
 );
 const IconShirt = () => <Icon path="M16 4 12 6 8 4 5 6v14h14V6l-3-2z" />;
-const IconLink = () => <Icon path="M14 3h7v7M21 3l-9 9M5 5h6v2H7v10h10v-4h2v6H5z" />;
+const IconLink = () => <Icon path="M10 5H8.2C7.08 5 6.52 5 6.092 5.218A1.8 1.8 0 0 0 5.218 6.092C5 6.52 5 7.08 5 8.2v7.6c0 1.12 0 1.68.218 2.108.192.376.498.683.874.874.427.218.987.218 2.105.218h7.606c1.118 0 1.677 0 2.105-.218.376-.192.683-.498.874-.874.218-.427.218-.986.218-2.104V14M20 9V4h-5m5 0-7 7"/>;
 
 export default function InfoPage() {
   return (
@@ -62,7 +62,7 @@ export default function InfoPage() {
                 >
                   <svg viewBox="0 0 24 24" className="size-3 fill-none stroke-current">
                     <path
-                      d="M14 3h7v7M21 3l-9 9M5 5h6v2H7v10h10v-4h2v6H5z"
+                      d="M10 5H8.2C7.08 5 6.52 5 6.092 5.218A1.8 1.8 0 0 0 5.218 6.092C5 6.52 5 7.08 5 8.2v7.6c0 1.12 0 1.68.218 2.108.192.376.498.683.874.874.427.218.987.218 2.105.218h7.606c1.118 0 1.677 0 2.105-.218.376-.192.683-.498.874-.874.218-.427.218-.986.218-2.104V14M20 9V4h-5m5 0-7 7"
                       strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
