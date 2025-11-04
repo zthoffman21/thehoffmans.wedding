@@ -269,6 +269,7 @@ export async function getSettings() {
             auto_publish_uploads: boolean;
             upload_rate_per_hour: number;
             purge_rejected_uploads: boolean;
+            email_admin_on_uploads: boolean;
         };
     }>(res);
     return data.settings;
@@ -300,6 +301,7 @@ async function updateGallerySettings(opts: {
     auto_publish_uploads?: boolean;
     upload_rate_per_hour?: number;
     purge_rejected_uploads?: boolean;
+    email_admin_on_uploads?: boolean;
 }) {
     const res = await fetch(`/api/admin/settings`, {
         method: "POST",
@@ -1047,6 +1049,7 @@ function GalleryTab() {
     const [ratePerHour, setRatePerHour] = useState<number>(20);
     const [saving, setSaving] = useState(false);
     const [purgeRejected, setPurgeRejected] = useState(true);
+    const [emailAdmins, setEmailAdmins] = useState(false);
 
     const [preview, setPreview] = useState<AdminPhoto | null>(null);
     const [albumFilter, setAlbumFilter] = useState<string>("all");
@@ -1140,6 +1143,7 @@ function GalleryTab() {
                 setAutoPublish(!!s.auto_publish_uploads);
                 setRatePerHour(Number(s.upload_rate_per_hour || 20));
                 setPurgeRejected(!!s.purge_rejected_uploads);
+                setEmailAdmins(!!s.email_admin_on_uploads);
             })
             .catch((e) => console.error("Failed to load settings", e));
     }, []);
@@ -1209,6 +1213,7 @@ function GalleryTab() {
                 auto_publish_uploads: autoPublish,
                 upload_rate_per_hour: Math.max(1, Number(ratePerHour || 20)),
                 purge_rejected_uploads: !!purgeRejected,
+                email_admin_on_uploads: !!emailAdmins,
             });
             alert("Settings saved");
         } catch (e: any) {
@@ -1247,6 +1252,16 @@ function GalleryTab() {
                                     onChange={(e) => setPurgeRejected(e.target.checked)}
                                 />
                                 <span className="text-sm">Purge rejected uploads from R2</span>
+                            </label>
+
+                            <label className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={emailAdmins}
+                                    onChange={(e) => setEmailAdmins(e.target.checked)}
+                                />
+                                <span className="text-sm">Email admin when new photos upload</span>
                             </label>
 
                             <div className="flex items-center gap-3">
@@ -1817,7 +1832,9 @@ function RemindersTab() {
                                     <td className="max-w-[260px] truncate" title={r.reminder_title}>
                                         {r.reminder_title}
                                     </td>
-                                    <td className="whitespace-nowrap">{r.send_date == null? "-": formatNYDateTime(r.send_date)}</td>
+                                    <td className="whitespace-nowrap">
+                                        {r.send_date == null ? "-" : formatNYDateTime(r.send_date)}
+                                    </td>
                                     <td>{r.days_out ?? "—"}</td>
                                     <td>#{r.html_content_index}</td>
                                     <td className="text-right">
