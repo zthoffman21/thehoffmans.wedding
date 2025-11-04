@@ -145,8 +145,7 @@ function DeadlineCard({ deadlineISO }: { deadlineISO?: string | null }) {
         <section className="mx-auto max-w-2xl px-4 pt-8">
             <div
                 className={
-                    "rounded-2xl border p-5 sm:p-6 shadow-sm backdrop-blur " +
-                    (expired ? "border-red-200 bg-red-50/80" : "border-ink/5 bg-[#FAF7EC]/80")
+                    "rounded-2xl border p-5 sm:p-6 shadow-sm backdrop-blur border-black/5 bg-[#FAF7EC]/80 "
                 }
             >
                 <h2 className="font-serif text-xl text-ink leading-tight">RSVP deadline</h2>
