@@ -51,7 +51,7 @@ function nowNY() {
 }
 function renderUploadEmailHTML(photos: PhotoMeta[], adminUrl?: string) {
     const count = photos.length;
-    const maxList = 10; // show up to 10 items, then "+N more"
+    const maxList = 10;
     const more = Math.max(0, count - maxList);
 
     const byAlbum: Record<string, number> = {};
@@ -184,7 +184,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         if (photos.length === 0)
             return json({ ok: false, message: "No photos to confirm" }, { status: 400 });
 
-        // ---- R2 sanity (HEAD) ----
         // ---- R2 sanity (HEAD) + metadata finalize ----
         for (const p of photos) {
             const key = p.imageId!;
@@ -209,14 +208,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                 );
             }
 
-            // --- build friendly filename (ASCII + RFC5987 UTF-8) ---
+            // Rewrite headers if needed (contentType/cacheControl)
             const rawBase =
                 p.download_name || decodeURIComponent(key.split("/").pop() || "photo.jpg");
             const dot = rawBase.lastIndexOf(".");
-            const base = dot > 0 ? rawBase.slice(0, dot) : rawBase;
             const ext = dot > 0 ? rawBase.slice(dot) : ".jpg";
-
-            // Choose a proper image Content-Type
             const desiredContentType =
                 head.httpMetadata?.contentType ||
                 (/\.(png)$/i.test(ext)
@@ -257,17 +253,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                         customMetadata: head.customMetadata,
                     });
                 } catch (e) {
-                    console.warn("R2.put rewrite failed for", key, e);
-                    // non-fatal
+                    console.warn("R2.put rewrite failed for", key, e); // non-fatal
                 }
             }
         }
 
-        // ---- moderation defaults from settings ----
-        const row = await env.DB.prepare(
-            `SELECT value FROM settings WHERE key='auto_publish_uploads' LIMIT 1`
-        ).first<{ value?: string }>();
-        const auto = row?.value === "1";
+        // ---- fetch moderation & email settings (ONE query) ----
+        const keys = ["auto_publish_uploads", "email_admin_on_uploads"] as const;
+        const rows = await env.DB.prepare(`SELECT key, value FROM settings WHERE key IN (?, ?)`)
+            .bind(...keys)
+            .all<{ key: string; value: string }>();
+        const map = Object.fromEntries((rows.results ?? []).map((r) => [r.key, r.value]));
+        const auto = (map["auto_publish_uploads"] ?? "0") === "1";
+        const notify = (map["email_admin_on_uploads"] ?? "0") === "1";
 
         function basenameFromKey(k: string) {
             const s = k.split("/");
@@ -291,7 +289,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
                     );
                 }
 
-                // write final, then delete tmp
                 await env.R2.put(finalKey, obj.body, {
                     httpMetadata: {
                         contentType:
@@ -313,34 +310,36 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
                 await env.DB.prepare(
                     `INSERT INTO photos
-         (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
-       VALUES
-         (?, ?, ?, ?, ?, ?, NULL, 'approved', 1, CURRENT_TIMESTAMP)`
+           (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
+           VALUES
+           (?, ?, ?, ?, ?, ?, NULL, 'approved', 1, CURRENT_TIMESTAMP)`
                 )
                     .bind(finalKey, albumId, p.caption, p.display_name, p.width, p.height)
                     .run();
             }
 
-            const adminUrl = "https://thehoffmans.wedding/admin";
-            const result = await sendEmail(env, {
-                to: env.EMAIL_ADMIN_TO,
-                subject: `New Images Uploaded: ${photos.length} photo(s)`,
-                html: renderUploadEmailHTML(photos, adminUrl),
-            });
-
-            if (!result.ok && result.status === 402) {
-                console.log("Email not sent: free-tier quota likely exceeded.");
+            // send email only if setting is enabled and a recipient is configured
+            if (notify && env.EMAIL_ADMIN_TO) {
+                const adminUrl = "https://thehoffmans.wedding/admin";
+                const result = await sendEmail(env, {
+                    to: env.EMAIL_ADMIN_TO,
+                    subject: `New Images Uploaded: ${photos.length} photo(s)`,
+                    html: renderUploadEmailHTML(photos, adminUrl),
+                });
+                if (!result.ok && result.status === 402) {
+                    console.log("Email not sent: free-tier quota likely exceeded.");
+                }
             }
 
             return json({ ok: true, inserted: photos.length, status: "approved" });
         } else {
-            // Pending: keep in tmp, insert with pending/is_public=0, remember album_id
+            // Pending: keep in tmp, insert with pending/is_public=0
             const stmts = photos.map((p) =>
                 env.DB.prepare(
                     `INSERT INTO photos
-         (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
-       VALUES
-         (?, ?, ?, ?, ?, ?, NULL, 'pending', 0, CURRENT_TIMESTAMP)`
+           (id, album_id, caption, display_name, width, height, taken_at, status, is_public, created_at)
+           VALUES
+           (?, ?, ?, ?, ?, ?, NULL, 'pending', 0, CURRENT_TIMESTAMP)`
                 ).bind(
                     p.imageId!,
                     (p.album_id || "album_general").trim(),
@@ -352,14 +351,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             );
             await env.DB.batch(stmts);
 
-            const adminUrl = "https://thehoffmans.wedding/admin";
-            const result = await sendEmail(env, {
-                to: env.EMAIL_ADMIN_TO,
-                subject: `New Images Waiting For Approval: ${photos.length} photo(s)`,
-                html: renderUploadEmailHTML(photos, adminUrl),
-            });
-            if (!result.ok && result.status === 402) {
-                console.log("Email not sent: free-tier quota likely exceeded.");
+            if (notify && env.EMAIL_ADMIN_TO) {
+                const adminUrl = "https://thehoffmans.wedding/admin";
+                const result = await sendEmail(env, {
+                    to: env.EMAIL_ADMIN_TO,
+                    subject: `New Images Waiting For Approval: ${photos.length} photo(s)`,
+                    html: renderUploadEmailHTML(photos, adminUrl),
+                });
+                if (!result.ok && result.status === 402) {
+                    console.log("Email not sent: free-tier quota likely exceeded.");
+                }
             }
 
             return json({ ok: true, inserted: photos.length, status: "pending" });
