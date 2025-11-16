@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import PerforatedButton from "../components/PerforatedButton";
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Tape } from "../components/Tape";
 
 export default function Invite() {
@@ -35,6 +35,40 @@ export default function Invite() {
 }
 
 function Postcard({ code }: { code?: string }) {
+    const designW = 720;
+    const designH = 514;
+
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (!wrapperRef.current) return;
+            const containerWidth = wrapperRef.current.clientWidth || designW;
+            const nextScale = Math.min(1, containerWidth / designW);
+            setScale(nextScale);
+        };
+
+        updateScale();
+
+        // Use ResizeObserver if available for nicer behavior
+        let observer: ResizeObserver | undefined;
+        if (typeof ResizeObserver !== "undefined" && wrapperRef.current) {
+            observer = new ResizeObserver(updateScale);
+            observer.observe(wrapperRef.current);
+        } else {
+            window.addEventListener("resize", updateScale);
+        }
+
+        return () => {
+            if (observer && wrapperRef.current) {
+                observer.unobserve(wrapperRef.current);
+            } else {
+                window.removeEventListener("resize", updateScale);
+            }
+        };
+    }, []);
+
     return (
         <div className="relative">
             {/* Glow */}
@@ -43,45 +77,40 @@ function Postcard({ code }: { code?: string }) {
                 aria-hidden="true"
             />
 
-            {/* ===== Mobile scale wrapper (scales whole postcard on xs) ===== */}
+            {/* Scale wrapper */}
             <div
-                className="block relative [container-type:inline-size]"
-                style={
-                    {
-                        // Base design size for the interior card (approx 7:5 including bottom bar)
-                        "--designW": "720px",
-                        "--designH": "514px",
-                        // Scale down when container is narrower than the design width; cap at 1
-                        "--s": "min(1, calc(100cqw / var(--designW)))",
-                        // Reserve the scaled height so layout is stable on mobile
-                        height: "calc(var(--designH) * var(--s))",
-                    } as React.CSSProperties
-                }
+                ref={wrapperRef}
+                className="relative block mx-auto w-full max-w-[720px]"
+                style={{
+                    // Reserve the scaled height so the layout is correct in Firefox
+                    height: `${designH * scale}px`,
+                }}
             >
-                {/* Absolutely position and scale the desktop composition */}
+                {/* Absolutely positioned composition that gets scaled */}
                 <div
                     className="absolute left-1/2 top-0 -translate-x-1/2"
                     style={{
-                        width: "var(--designW)",
-                        height: "var(--designH)",
-                        transform: "scale(var(--s))",
+                        width: `${designW}px`,
+                        height: `${designH}px`,
+                        transform: `scale(${scale})`,
                         transformOrigin: "top center",
                     }}
                 >
                     {/* MOBILE: tape that scales with the postcard */}
-                    <div className="lg:hidden pointer-events-none absolute z-[9999] left-15/40 -translate-x-1/2 -top-8">
+                    <div className="lg:hidden pointer-events-none absolute z-[9999] left-3/8 -translate-x-1/2 -top-8">
                         <Tape className="w-[200px] h-auto z-[9999]" />
                     </div>
 
-                    {/* === Card interior (desktop composition used everywhere, then scaled on mobile) === */}
+                    {/* === Card interior === */}
                     <div
                         className="
-              relative
-              rounded-[16px] border border-neutral-300 bg-[#FAF7EC] shadow-xl overflow-hidden
-            "
+                            relative
+                            rounded-[16px] border border-neutral-300 bg-[#FAF7EC]
+                            shadow-xl overflow-hidden
+                        "
                         style={{
-                            width: "var(--designW)",
-                            height: "var(--designH)",
+                            width: `${designW}px`,
+                            height: `${designH}px`,
                             backgroundImage:
                                 "radial-gradient(1px 1px at 22% 28%, rgba(0,0,0,.09) 1px, transparent 1px)," +
                                 "radial-gradient(1px 1px at 72% 62%, rgba(0,0,0,.07) 1px, transparent 1px)," +
@@ -92,10 +121,10 @@ function Postcard({ code }: { code?: string }) {
                         {/* Printed border */}
                         <div className="absolute inset-2.5 rounded-[12px] border border-neutral-300/90 pointer-events-none" />
 
-                        {/* Divider (always on; was desktop-only) */}
+                        {/* Divider */}
                         <div className="absolute top-3 bottom-36 left-[55%] -translate-x-1/2 border-l border-neutral-300/90" />
 
-                        {/* LEFT cursive section (absolute, centered within its own area) */}
+                        {/* LEFT cursive section */}
                         <div className="grid absolute top-5 bottom-36 left-5 right-[48%] pr-4 place-content-center justify-items-center text-center">
                             <h1
                                 className="text-ink tracking-wide text-[46px] leading-tight"
@@ -139,9 +168,8 @@ function Postcard({ code }: { code?: string }) {
                                 </div>
                             </div>
 
-                            {/* Stamp + postmark (absolute cluster at top-right of the right panel) */}
+                            {/* Stamp + postmark */}
                             <div className="absolute top-0 right-0 flex flex-col items-end gap-1">
-                                {/* Use fixed design sizes so they scale uniformly with the card */}
                                 <div className="relative">
                                     <Stamp className="w-[100px] h-auto drop-shadow-sm -rotate-1" />
                                     <Postmark className="w-[80px] h-auto absolute -right-6 -top-0 opacity-60 mix-blend-multiply pointer-events-none rotate-6" />
