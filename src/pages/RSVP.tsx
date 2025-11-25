@@ -203,7 +203,7 @@ function SearchSection({ onPick }: { onPick: (id: string) => void }) {
                     </h1>
                     <p className="mt-1 text-sm text-ink/70">
                         Search your family or individual name exactly as it might appear on the
-                        envelope (e.g., "David Hoffman Family" or "Avery Tucker").
+                        envelope (e.g., "The David Hoffman Family" or "Avery Tucker").
                     </p>
 
                     <div className="mt-5 flex gap-2">
