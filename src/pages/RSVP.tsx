@@ -420,7 +420,7 @@ function ReviewBar({
                         <div className="text-sm font-medium text-ink">Ready to submit?</div>
                         <div className="text-xs text-ink/60">
                             {isSolo
-                                ? "You set your attendance."
+                                ? `${counts.attending} attending selections made.`
                                 : `${counts.attending} attending selections made across ${party.members.length} guest${party.members.length === 1 ? "" : "s"}.`}
                         </div>
                         {notice && (
