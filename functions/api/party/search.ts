@@ -19,10 +19,13 @@ async function searchLike(env: Env, q: string) {
   const { results } = await env.DB.prepare(
     `SELECT p.id AS id, p.display_name AS label
      FROM parties p
+     LEFT JOIN members m ON m.party_id = p.id
      WHERE p.display_name LIKE ?
+        OR m.full_name LIKE ?
+     GROUP BY p.id
      ORDER BY p.display_name
      LIMIT 10`
-  ).bind(like).all<{ id: string; label: string }>();
+  ).bind(like, like).all<{ id: string; label: string }>();
   return results ?? [];
 }
 

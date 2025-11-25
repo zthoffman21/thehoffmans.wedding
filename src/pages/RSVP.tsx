@@ -410,6 +410,7 @@ function ReviewBar({
         });
         return { invited, attending };
     }, [party]);
+    const isSolo = party.members.length <= 1;
 
     return (
         <div className="fixed inset-x-0 bottom-2 z-50 mx-auto max-w-3xl px-4 pb-[env(safe-area-inset-bottom)]">
@@ -418,8 +419,9 @@ function ReviewBar({
                     <div className="text-center sm:text-left">
                         <div className="text-sm font-medium text-ink">Ready to submit?</div>
                         <div className="text-xs text-ink/60">
-                            {counts.attending} attending selections made across{" "}
-                            {party.members.length} guest(s).
+                            {isSolo
+                                ? "You set your attendance."
+                                : `${counts.attending} attending selections made across ${party.members.length} guest${party.members.length === 1 ? "" : "s"}.`}
                         </div>
                         {notice && (
                             <div className="mt-1 text-xs font-medium text-red-700">{notice}</div>
@@ -462,6 +464,8 @@ function PartySection({
     onBackToSearch: () => void;
     onSubmitted: (id: string) => void;
 }) {
+    const isSolo = party.members.length <= 1;
+    const headingName = isSolo ? party.members[0]?.fullName || party.displayName : party.displayName;
     const [submitting, setSubmitting] = useState(false);
 
     const validation = useMemo(() => validateParty(party), [party]);
@@ -523,9 +527,11 @@ function PartySection({
                 ← Back
             </button>
 
-            <h2 className="mt-2 font-serif text-2xl text-[#F2EFE7]">{party.displayName}</h2>
+            <h2 className="mt-2 font-serif text-2xl text-[#F2EFE7]">{headingName}</h2>
             <p className="mt-1 text-sm text-[#F2EFE7]/70">
-                Toggle who's attending each event, then add dietary needs or notes if needed.
+                {isSolo
+                    ? "Let us know if you can join us, then add any dietary needs or notes."
+                    : "Toggle who's attending each event, then add dietary needs or notes if needed."}
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-4">
