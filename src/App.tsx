@@ -7,6 +7,7 @@ import Info from "./pages/Info";
 import Invite from "./pages/Invite";
 import Guide from "./pages/Guide";
 import AdminDashboard from "./pages/admin";
+import Registry from "./pages/Registry";
 import ScrollToTop from "./Scroll";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
                     <Route path="/gallery" element={<Gallery />} />
                     <Route path="/info" element={<Info />} />
                     <Route path="/guide" element={<Guide />} />
+                    <Route path="/registry" element={<Registry />} />
 
                     <Route path="/admin" element={<AdminDashboard />} />
                 </Routes>

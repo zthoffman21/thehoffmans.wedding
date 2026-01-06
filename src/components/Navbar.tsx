@@ -2,28 +2,40 @@ import { useEffect, useState, useCallback } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
+// July 17, 2026 in Eastern (EDT in July is -04:00)
 const WEDDING_ISO = "2026-07-17T00:00:00-04:00";
 
-function countdownLabel(targetISO: string) {
+function getCountdownLabel(targetISO: string) {
     const now = new Date();
     const target = new Date(targetISO);
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return "Wedding day! 🎉";
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 1) return `In ${days} Day`;
+
+    const diffMs = target.getTime() - now.getTime();
+
+    // Already wedding day or later
+    if (diffMs <= 0) return "Wedding day! 🎉";
+
+    const dayMs = 1000 * 60 * 60 * 24;
+    const days = Math.ceil(diffMs / dayMs);
+
+    if (days === 1) return "In 1 Day";
     return `In ${days} Days`;
 }
 
 export default function NavBar() {
     const [open, setOpen] = useState(false);
     const [elevated, setElevated] = useState(false);
-    const [countdown, setCountdown] = useState(() => countdownLabel(WEDDING_ISO));
+    const [countdown, setCountdown] = useState(() => getCountdownLabel(WEDDING_ISO));
     const location = useLocation();
 
+    // Update countdown every minute
     useEffect(() => {
         const id = setInterval(() => {
-            setCountdown(countdownLabel(WEDDING_ISO));
+            setCountdown(getCountdownLabel(WEDDING_ISO));
         }, 60_000);
+
+        // Also do one immediate refresh in case of hydration / initial render mismatch
+        setCountdown(getCountdownLabel(WEDDING_ISO));
+
         return () => clearInterval(id);
     }, []);
 
@@ -66,6 +78,7 @@ export default function NavBar() {
         { to: "/", label: "Home" },
         { to: "/info", label: "What to Expect" },
         { to: "/guide", label: "Recommendations" },
+        { to: "/registry", label: "Registry" },
         { to: "/gallery", label: "Gallery" },
     ];
 
@@ -132,7 +145,7 @@ export default function NavBar() {
                         </Link>
 
                         {/* Desktop nav */}
-                        <div className="hidden md:flex items-center gap-1">
+                        <div className="hidden lg:flex items-center gap-1">
                             {links.map((l) => (
                                 <NavLink
                                     key={l.to}
@@ -161,7 +174,7 @@ export default function NavBar() {
                         {/* Mobile hamburger */}
                         <button
                             onClick={() => setOpen(true)}
-                            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#1F1A17]/25 bg-[#FAF7EC]/70 hover:brightness-95"
+                            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#1F1A17]/25 bg-[#FAF7EC]/70 hover:brightness-95"
                             aria-label="Open menu"
                             aria-expanded={open}
                         >
@@ -173,7 +186,7 @@ export default function NavBar() {
 
             {/* Mobile sheet */}
             <div
-                className={`md:hidden fixed inset-0 z-50 ${
+                className={`lg:hidden fixed inset-0 z-50 ${
                     open ? "pointer-events-auto" : "pointer-events-none"
                 }`}
                 aria-hidden={!open}
