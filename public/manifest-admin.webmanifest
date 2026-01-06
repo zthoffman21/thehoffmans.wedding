@@ -1,9 +1,9 @@
 {
   "name": "Wedding Admin",
   "short_name": "Admin",
-  "id": "/admin",
-  "start_url": "/admin",
-  "scope": "/admin",
+  "id": "/admin/",
+  "start_url": "/admin/",
+  "scope": "/admin/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1F1A17",
