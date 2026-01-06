@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Landing from "./pages/Landing";
@@ -12,6 +13,24 @@ import ScrollToTop from "./Scroll";
 export default function App() {
     const location = useLocation();
     const isInvite = location.pathname.startsWith("/invite");
+    const isAdmin = location.pathname.startsWith("/admin");
+
+    // Swap manifest so Add-to-Home-Screen on /admin opens admin directly 
+    useEffect(() => {
+        const target = isAdmin ? "/manifest-admin.webmanifest" : "/manifest.webmanifest";
+        const link =
+            (document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null) ??
+            (() => {
+                const el = document.createElement("link");
+                el.rel = "manifest";
+                document.head.appendChild(el);
+                return el;
+            })();
+        const absolute = new URL(target, window.location.origin).toString();
+        if (link && link.href !== absolute) {
+            link.setAttribute("href", target);
+        }
+    }, [isAdmin]);
 
     return (
         <div className="min-h-screen flex flex-col">
