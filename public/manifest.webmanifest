@@ -1,0 +1,48 @@
+{
+  "name": "Avery & Zach Wedding",
+  "short_name": "Hoffman Wedding",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1F1A17",
+  "background_color": "#FAF7EC",
+  "lang": "en",
+  "description": "Details, RSVP, and admin tools for the Hoffman wedding.",
+  "icons": [
+    {
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Admin",
+      "description": "Jump straight to the admin tools.",
+      "url": "/admin",
+      "icons": [
+        {
+          "src": "/app-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
