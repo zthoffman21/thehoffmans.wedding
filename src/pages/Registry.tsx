@@ -2,7 +2,7 @@ const ZOLA_REGISTRY_URL =
     "https://www.zola.com/registry/averytandzachh/";
 
 interface RegistryCardProps {
-    eyebrow: string;
+    eyebrow?: string;
     title: string;
     body: string;
     buttonLabel: string;
@@ -86,7 +86,6 @@ export default function Registry() {
                     <div className="flex flex-col md:grid-cols-2">
                         <div className="mx-auto w-full max-w-lg space-y-8 md:space-y-0 md:grid md:gap-8">
                             <RegistryCard
-                                eyebrow="Registry"
                                 title="Zola Registry"
                                 body="Our registry is hosted on Zola, with a mix of kitchen items, household items, and others. You can view the full list using the button below."
                                 buttonLabel="View Registry on Zola"
