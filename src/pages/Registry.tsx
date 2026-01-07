@@ -1,8 +1,5 @@
 const ZOLA_REGISTRY_URL =
-    "https://www.zola.com/registry/zacharyandaveryjuly17";
-
-const WS_REGISTRY_URL =
-    "https://www.williams-sonoma.com/registry/r2fxm6868x/registry-list.html";
+    "https://www.zola.com/registry/averytandzachh/";
 
 interface RegistryCardProps {
     eyebrow: string;
@@ -59,7 +56,7 @@ export default function Registry() {
             {/* Background image */}
             <div
                 className="absolute inset-0 z-0 bg-cover bg-[center_55%] sm:bg-[center_40%] md:bg-[center_57.5%]"
-                style={{ backgroundImage: "url('/info-bg.webp?v=3')" }}
+                style={{ backgroundImage: "url('/registry-bg.webp?v=3')" }}
                 aria-hidden
             />
             {/* Vignette overlay */}
@@ -77,39 +74,26 @@ export default function Registry() {
             <div className="relative z-20">
                 <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20 space-y-10">
                     <header className="flex flex-col items-center text-center text-[#F2EFE7]">
-                        <p className="text-sm/6 tracking-widest uppercase opacity-90">
-                            Registry
-                        </p>
                         <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">
-                            Gifts &amp; Registries
+                            Registry
                         </h1>
                         <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-                            Your presence is truly the greatest gift. For those who
-                            have kindly asked about gifts, we've created a couple of
-                            registries that reflect things we'll use and enjoy in our
-                            home together.
+                            Your presence is the greatest gift, but if you want to honor us with a gift, we have registered at the link below.
                         </p>
                     </header>
 
                     {/* Cards */}
-                    <div className="grid gap-8 md:grid-cols-2">
-                        <RegistryCard
-                            eyebrow="Registry"
-                            title="Zola Wedding Registry"
-                            body="Our primary registry is hosted on Zola, with a mix of household items, experiences, and group gifts. You can view the full list using the button below."
-                            buttonLabel="View Registry on Zola"
-                            href={ZOLA_REGISTRY_URL}
-                            subtleNote="Opens in a new tab on Zola."
-                        />
-
-                        <RegistryCard
-                            eyebrow="Registry"
-                            title="Williams Sonoma Registry"
-                            body="For those who love gifting kitchen and home favorites, we've also created a registry with Williams Sonoma."
-                            buttonLabel="View Williams Sonoma Registry"
-                            href={WS_REGISTRY_URL}
-                            subtleNote="Opens in a new tab on Williams Sonoma."
-                        />
+                    <div className="flex flex-col md:grid-cols-2">
+                        <div className="mx-auto w-full max-w-lg space-y-8 md:space-y-0 md:grid md:gap-8">
+                            <RegistryCard
+                                eyebrow="Registry"
+                                title="Zola Registry"
+                                body="Our registry is hosted on Zola, with a mix of kitchen items, household items, and others. You can view the full list using the button below."
+                                buttonLabel="View Registry on Zola"
+                                href={ZOLA_REGISTRY_URL}
+                                subtleNote="Opens in a new tab on Zola."
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
