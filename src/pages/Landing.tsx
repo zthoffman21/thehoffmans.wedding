@@ -79,7 +79,7 @@ export default function Landing() {
           cta="View photos"
           tapeClass="left-1/2 -translate-x-1/2 -top-4 rotate-[1deg] w-28 h-8"
         >
-          A look at our favorite moments and guest candids—add yours, too!
+          A shared photo gallery that allows everyone to share their favorite moments.
         </PaperCard>
       </div>
     </section>
