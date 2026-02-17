@@ -14,7 +14,9 @@ type PartyRow = {
 };
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
-  // Members with NO recorded attendance yet (i.e., no RSVP captured into current state)
+  // Members with NO recorded attendance yet (i.e., no RSVP captured into current state).
+  // Note: editing/saving a member can create a row in member_attendance_current with NULL fields.
+  // Those should still count as "no RSVP".
   const membersNoRSVP = await env.DB.prepare(
     `SELECT m.id AS member_id,
             m.full_name,
@@ -24,6 +26,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
      JOIN parties p ON p.id = m.party_id
      LEFT JOIN member_attendance_current a ON a.member_id = m.id
      WHERE a.member_id IS NULL
+        OR (a.attending_ceremony IS NULL AND a.attending_reception IS NULL)
      ORDER BY p.display_name, m.full_name
      LIMIT 500`
   ).all<MemberRow>();

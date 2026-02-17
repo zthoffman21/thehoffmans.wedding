@@ -698,6 +698,10 @@ function Manage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [party, setParty] = useState<PartyDetail | null>(null);
+    const [newDisplayName, setNewDisplayName] = useState("");
+    const [newSlug, setNewSlug] = useState("");
+    const [creating, setCreating] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
 
     // Debounced search (same pattern as RSVP SearchSection)
     useEffect(() => {
@@ -728,6 +732,39 @@ function Manage() {
             r.json()
         );
         setParty(res.party ?? null);
+    }
+
+    async function createParty() {
+        const display_name = newDisplayName.trim();
+        const slug = newSlug.trim();
+        if (!display_name || !slug) {
+            setCreateError("Display name and slug are required.");
+            return;
+        }
+
+        setCreating(true);
+        setCreateError(null);
+        try {
+            const res = await fetch("/api/admin/party", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ display_name, slug }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data?.id) {
+                throw new Error(data?.error || "Create failed");
+            }
+
+            setNewDisplayName("");
+            setNewSlug("");
+            setQ("");
+            setResults(null);
+            await loadParty(data.id);
+        } catch (e: any) {
+            setCreateError(e?.message || "Create failed");
+        } finally {
+            setCreating(false);
+        }
     }
 
     return (
@@ -771,6 +808,26 @@ function Manage() {
                             ))}
                         </ul>
                     )}
+                </div>
+
+                <div className="mt-6 border-t border-ink/10 pt-4">
+                    <h3 className="mb-2 text-base font-semibold">Create a party</h3>
+                    <div className="space-y-2">
+                        <I value={newDisplayName} onChange={setNewDisplayName} placeholder="Display name" />
+                        <I value={newSlug} onChange={setNewSlug} placeholder="Slug (for RSVP lookup)" />
+                        {createError && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {createError}
+                            </div>
+                        )}
+                        <button
+                            onClick={createParty}
+                            className="w-full rounded-lg border px-3 py-2"
+                            disabled={creating}
+                        >
+                            {creating ? "Creating..." : "Create party"}
+                        </button>
+                    </div>
                 </div>
             </div>
 

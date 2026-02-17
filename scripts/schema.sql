@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS settings (
 INSERT OR IGNORE INTO settings(key, value) VALUES
   ('auto_publish_uploads','0'),
   ('upload_rate_per_hour','20'),
-  ('purge_rejected_uploads', '1');
+  ('purge_rejected_uploads', '1'),
   ('email_admin_on_uploads','1');
 
 

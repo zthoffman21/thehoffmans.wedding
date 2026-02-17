@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+.wrangler
+
 seed.sql
 **/seed.sql
 **/seed*

@@ -4,6 +4,7 @@ import { sendEmail } from "../../email";
 
 type MemberRSVP = {
     memberId: string;
+    displayName?: string;
     attending: { ceremony: boolean | null; reception: boolean | null };
     dietary?: string | undefined;
     notes?: string | undefined;
@@ -122,7 +123,7 @@ export function renderRSVPConfirmationHTML(payload: RSVPEmailPayload & {
   // Build table rows: one row per member x (ceremony/reception) with known boolean
   const rows: string[] = [];
   for (const m of members) {
-    const name = m.memberId; // you may swap to display name if you have it
+    const name = m.displayName || m.memberId;
     const note = [m.dietary, m.notes].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "";
 
     var ceremony = false;
@@ -375,7 +376,7 @@ export function renderRSVPEmailHTML(payload: RSVPEmailPayload, adminUrl: string,
 
     const memberRows = members
         .map((m) => {
-            const name = escapeHtml(m.memberId);
+            const name = escapeHtml(m.displayName || m.memberId);
             const chips = attendanceChips(m);
             const dietary = (m.dietary ?? "").trim();
             const notes = (m.notes ?? "").trim();
@@ -539,7 +540,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
             `SELECT id FROM members WHERE party_id = ? AND id IN (${placeholders})`
         )
             .bind(party.id, ...memberIds)
-            .all<{ id: number }>();
+            .all<{ id: string }>();
 
         const found = new Set((belonging?.results ?? []).map((r) => r.id));
         const missing = memberIds.filter((id) => !found.has(id as any));
@@ -549,6 +550,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                 400
             );
         }
+
+        const memberRows = await env.DB.prepare(
+            `SELECT id, full_name FROM members WHERE party_id = ? AND id IN (${placeholders})`
+        ).bind(party.id, ...memberIds).all<{ id: string; full_name: string }>();
+        const memberNames = new Map(
+            (memberRows.results ?? []).map((m) => [m.id, m.full_name] as const)
+        );
+        const membersForEmail: MemberRSVP[] = parsed.data.members.map((m) => ({
+            ...m,
+            displayName: memberNames.get(m.memberId) ?? m.memberId,
+        }));
 
         const submissionId = newId("rsvp");
         const payloadJson = JSON.stringify(parsed.data);
@@ -636,7 +648,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                 submissionId: submissionId,
                 contactEmail: contactEmail,
                 contactPhone: contactPhone,
-                members: parsed.data.members,
+                members: membersForEmail,
             },
             adminUrl,
             csvUrl
@@ -656,7 +668,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ env, params, request }
                     submittedAt: new Date().toISOString(),
                     contactEmail: contactEmail,
                     contactPhone: contactPhone,
-                    members: parsed.data.members,
+                    members: membersForEmail,
                     rsvpLink: `https://thehoffmans.wedding/rsvp`,
                     infoLink: "https://thehoffmans.wedding/info",
                     coupleNames: "Avery & Zach",
