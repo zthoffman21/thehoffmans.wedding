@@ -202,8 +202,7 @@ function SearchSection({ onPick }: { onPick: (id: string) => void }) {
                         Find your invitation
                     </h1>
                     <p className="mt-1 text-sm text-ink/70">
-                        Search your family or individual name exactly as it might appear on the
-                        envelope (e.g., "The David Hoffman Family" or "Avery Tucker").
+                        Search the name on your invite. Family names and individual names both work.
                     </p>
 
                     <div className="mt-5 flex gap-2">
@@ -343,7 +342,7 @@ function ContactPanel({
         <div className="rounded-2xl border border-ink/10 bg-[#FAF7EC] p-4 shadow-sm">
             <h3 className="font-medium text-ink">Contact info</h3>
             <p className="mt-1 text-xs text-ink/60">
-                We'll use this if we need to reach you about any details.
+                Only so we can reach you if something changes.
             </p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <input
@@ -530,8 +529,8 @@ function PartySection({
             <h2 className="mt-2 font-serif text-2xl text-[#F2EFE7]">{headingName}</h2>
             <p className="mt-1 text-sm text-[#F2EFE7]/70">
                 {isSolo
-                    ? "Let us know if you can join us, then add any dietary needs or notes."
-                    : "Toggle who's attending each event, then add dietary needs or notes if needed."}
+                    ? "Let us know what you can make it to, plus any food notes."
+                    : "Mark who is coming to each event, plus any food notes."}
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-4">
@@ -609,7 +608,7 @@ function ConfirmationSection({ onReset }: { onReset: () => void }) {
                 />
                 <h2 className="font-serif text-2xl text-ink">RSVP received</h2>
                 <p className="mt-2 text-sm text-ink/70">
-                    Thank you! Your response have been recorded. You can close this page or look up
+                    Thank you! Your response has been recorded. You can close this page or look up
                     your invitation again to make changes.
                 </p>
                 <p className="mt-4 text-sm text-ink/70">
@@ -650,7 +649,7 @@ function ReminderToggle({
                 <div>
                     <h3 className="font-medium text-ink">Email reminders</h3>
                     <p className="mt-1 text-xs text-ink/60">
-                        We'll send gentle reminders to{" "}
+                        We can send reminders to{" "}
                         <span className="font-medium">{email || "—"}</span>.
                     </p>
                 </div>

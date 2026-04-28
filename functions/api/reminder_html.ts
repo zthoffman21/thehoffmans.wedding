@@ -2,8 +2,8 @@ export const EMAIL_SUBJECTS: Record<number, string> = {
   0: "Quick update from Avery & Zach",
   1: "RSVP deadline is coming up!",
   2: "Final details for the wedding (parking, timing, map)",
-  3: "Got wedding photos? We'd love to see them 📸",
-  4: "Thank you for celebrating with us ❤️",
+  3: "Have wedding photos? Send them our way",
+  4: "Thank you for being there",
 };
 
 // 0) FALLBACK / DEFAULT (index: 0)
@@ -32,7 +32,7 @@ export function defaultTemplate(guest_name: string) {
     <div class="pad">
       <p>Hi ${guest_name},</p>
       <p>We wanted to share a quick update related to our wedding on <strong>July 17, 2026</strong>.</p>
-      <p>If you were expecting a specific message (like an RSVP reminder, logistics, or photo upload request), don't worry, this email ensures you see the essentials even if something went off-script.</p>
+      <p>If you were expecting a specific message, this is the backup version with the important links.</p>
       <p>
         <a class="btn" href="https://thehoffmans.wedding/info">Open Wedding Portal</a>
       </p>
@@ -173,7 +173,7 @@ export function photoUploadTemplate(guest_name: string) {
     </div>
     <div class="pad">
       <p>Hi ${guest_name},</p>
-      <p>We'd love to see the day through your lens! If you snapped any photos or videos, please add them to our guest gallery.</p>
+      <p>If you took photos or videos, please add them to the gallery. We want to see the stuff we missed.</p>
       <p>
         <a class="btn" href="https://thehoffmans.wedding/gallery">Upload to the Gallery</a>
       </p>
@@ -214,7 +214,7 @@ export function thankYouTemplate(guest_name: string) {
     </div>
     <div class="pad">
       <p>Hi ${guest_name},</p>
-      <p>We're so grateful you could be part of our day. Thank you for the love, laughs, and memories!</p>
+      <p>Thank you for being there with us. It meant a lot to have you there.</p>
       <div class="cards">
         <div class="card">
           <h2 style="font-size:16px;">Photo Gallery</h2>

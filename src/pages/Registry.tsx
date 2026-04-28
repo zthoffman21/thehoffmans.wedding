@@ -78,7 +78,7 @@ export default function Registry() {
                             Registry
                         </h1>
                         <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-                            Your presence is the greatest gift, but if you want to honor us with a gift, we have registered at the link below.
+                            We are just glad you are celebrating with us. If you would like to send a gift, our registry is below.
                         </p>
                     </header>
 
@@ -87,7 +87,7 @@ export default function Registry() {
                         <div className="mx-auto w-full max-w-lg space-y-8 md:space-y-0 md:grid md:gap-8">
                             <RegistryCard
                                 title="Zola Registry"
-                                body="Our registry is hosted on Zola, with a mix of kitchen items, household items, and others. You can view the full list using the button below."
+                                body="We put everything on Zola: kitchen things, home things, and a few practical odds and ends."
                                 buttonLabel="View Registry on Zola"
                                 href={ZOLA_REGISTRY_URL}
                                 subtleNote="Opens in a new tab on Zola."

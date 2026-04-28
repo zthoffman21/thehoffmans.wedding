@@ -45,7 +45,7 @@ export default function InfoPage() {
             <p className="text-sm/6 tracking-widest uppercase opacity-90">Aspen & Alston</p>
             <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">What to Expect</h1>
             <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-              A relaxed celebration with our closest friends and family — good food, easy vibes, and great memories.
+              A relaxed evening with our closest friends and family.
             </p>
           </header>
 
@@ -131,8 +131,7 @@ export default function InfoPage() {
               <Card>
                 <CardHeader icon={<IconUsers />} title="The Vibe" />
                 <p className="mt-3 text-neutral-800">
-                  A chill wedding focused on time together with close friends and family. Come ready to relax,
-                  celebrate, and make memories with us.
+                  Nothing too formal. We just want everyone comfortable, fed, and hanging out with us.
                 </p>
               </Card>
 

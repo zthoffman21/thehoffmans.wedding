@@ -218,8 +218,7 @@ export default function Gallery() {
                 <div className="mx-auto flex max-w-5xl flex-col items-center text-center text-[#F2EFE7]">
                     <h1 className="text-4xl font-semibold sm:text-5xl">Photo Gallery</h1>
                     <p className="mt-3 max-w-2xl text-base/7 opacity-95">
-                        A shared photo album that allows everyone to share their favorite memories
-                        of the day from their point of view.
+                        Upload any photos or videos you took, and check back to see what everyone else added.
                     </p>
 
                     <div className="mt-6 flex items-center gap-3 text-sm text-[#FAF7EC]/80">

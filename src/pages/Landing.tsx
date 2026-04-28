@@ -56,8 +56,7 @@ export default function Landing() {
           cta="Read details"
           tapeClass="left-1/2 -translate-x-1/2 -top-4 rotate-[-4deg] w-32 h-8"
         >
-          Ceremony timing, reception vibe, and little things that'll make the day feel
-          easy.
+          Timing, dress code, parking, and the details people usually ask us for.
         </PaperCard>
 
         <PaperCard
@@ -68,18 +67,18 @@ export default function Landing() {
           cta="Plan your trip"
           tapeClass="left-1/2 -translate-x-1/2 -top-5 rotate-[3deg] w-36 h-8"
         >
-          Hotels, local spots we love, and airport info.
+          Places to stay, where to fly in, and a few Columbus spots we like.
         </PaperCard>
 
         <PaperCard
           title="Photo Gallery"
-          subtitle="Snapshots & memories"
+          subtitle="Guest uploads"
           accent="rose"
           to="/gallery"
           cta="View photos"
           tapeClass="left-1/2 -translate-x-1/2 -top-4 rotate-[1deg] w-28 h-8"
         >
-          A shared photo gallery that allows everyone to share their favorite moments.
+          Add photos from the wedding and see what everyone else posts.
         </PaperCard>
       </div>
     </section>

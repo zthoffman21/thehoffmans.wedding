@@ -77,7 +77,7 @@ export default function Guide() {
             <p className="text-sm/6 tracking-widest uppercase opacity-90">In The Area</p>
             <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">Recommendations</h1>
             <p className="mt-4 max-w-2xl text-base/7 opacity-95">
-              Places we love nearby—good eats, cozy coffee, and little adventures if you're making a weekend of it.
+              A few places we like around Columbus if you have extra time before or after the wedding.
             </p>
           </header>
 
@@ -99,7 +99,7 @@ export default function Guide() {
             <div className="space-y-6 md:col-span-3">
               {/* Restaurants */}
               <Card>
-                <CardHeader icon={<IconFork />} title="Restaurants" subtitle="Date-night spots & casual bites" />
+                <CardHeader icon={<IconFork />} title="Restaurants" subtitle="Easy food recs nearby" />
                 <div className="mt-5 space-y-4">
                   {restaurants.map((r) => (
                     <ListRow key={r.name} item={r} />
@@ -109,7 +109,7 @@ export default function Guide() {
 
               {/* Activities */}
               <Card>
-                <CardHeader icon={<IconCompass />} title="Things to Do" subtitle="Outdoors, museums, and local gems" />
+                <CardHeader icon={<IconCompass />} title="Things to Do" subtitle="Good options if you have time" />
                 <div className="mt-5 space-y-4">
                   {activities.map((a) => (
                     <ListRow key={a.name} item={a} />
@@ -153,7 +153,7 @@ export default function Guide() {
                         <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Hilton Columbus at Easton" })} target="_blank" rel="noreferrer">
                           Hilton Columbus at Easton
                         </a>{" "}
-                        - Modern stay, walkable to shopping & dining.
+                        - Walkable to shopping and food.
                       </li>
                       <li>
                         <a
@@ -164,7 +164,7 @@ export default function Guide() {
                         >
                           Nationwide Hotel & Conference Center
                         </a>{" "}
-                        - Quiet retreat, ~15 min north of the city.
+                        - Quiet, about 15 minutes north of the city.
                       </li>
                       <li>
                         <a className="underline hover:opacity-80" href={buildMapsLink({ name: "Courtyard by Marriott Columbus Polaris" })} target="_blank" rel="noreferrer">
@@ -276,7 +276,7 @@ function ListRow({ item }: { item: RecItem }) {
 const restaurants: RecItem[] = [
   { name: "Dirty Frank's Hot Dog Palace", price: "$", tags: ["Casual", "Downtown"], avery: true, mapsQuery: "Dirty Frank’s Hot Dog Palace, Columbus, OH" },
   { name: "Yabo's Tacos", price: "$", tags: ["Tacos", "Casual"], avery: true, mapsQuery: "Yabo's Tacos Polaris, Columbus, OH" },
-  { name: "North Market", price: "$$", desc: "Classic Columbus food hall with lots of stalls.", tags: ["Food hall", "Downtown"], mapsQuery: "North Market Downtown, Columbus, OH" },
+  { name: "North Market", price: "$$", desc: "Columbus food hall with a bunch of options.", tags: ["Food hall", "Downtown"], mapsQuery: "North Market Downtown, Columbus, OH" },
 ];
 
 const drinks: RecItem[] = [
@@ -285,11 +285,11 @@ const drinks: RecItem[] = [
 ];
 
 const activities: RecItem[] = [
-  { name: "Groovy Plant Ranch", desc: "Huge, fun plant nursery & greenhouse.", tags: ["Plants", "Photo-friendly"], avery: true, mapsQuery: "Groovy Plant Ranch, Marengo, OH" },
+  { name: "Groovy Plant Ranch", desc: "Big plant nursery and greenhouse.", tags: ["Plants", "Photo-friendly"], avery: true, mapsQuery: "Groovy Plant Ranch, Marengo, OH" },
   { name: "Columbus Museum of Art", tags: ["Museum", "Indoor"], mapsQuery: "Columbus Museum of Art, Columbus, OH" },
   { name: "Franklin Park Conservatory & Botanical Gardens", tags: ["Garden", "Indoor/Outdoor"], mapsQuery: "Franklin Park Conservatory, Columbus, OH" },
-  { name: "German Village", desc: "Brick streets, bookshops, and cozy eats.", tags: ["Neighborhood", "Stroll"], mapsQuery: "German Village, Columbus, OH" },
-  { name: "Short North Arts District", desc: "Boutiques, galleries, and dining.", tags: ["Neighborhood", "Shops"], mapsQuery: "Short North Arts District, Columbus, OH" },
+  { name: "German Village", desc: "Brick streets, bookshops, and good food.", tags: ["Neighborhood", "Stroll"], mapsQuery: "German Village, Columbus, OH" },
+  { name: "Short North Arts District", desc: "Shops, galleries, and restaurants.", tags: ["Neighborhood", "Shops"], mapsQuery: "Short North Arts District, Columbus, OH" },
   { name: "Easton Town Center (Mall)", tags: ["Shopping", "Dining"], mapsQuery: "Easton Town Center, Columbus, OH" },
   { name: "Polaris Fashion Place (Mall)", tags: ["Shopping"], mapsQuery: "Polaris Fashion Place, Columbus, OH" },
 ];
