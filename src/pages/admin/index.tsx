@@ -479,6 +479,12 @@ function Overview() {
             .then((r) => r.json())
             .then(setData);
     }, []);
+
+    const att = data?.attendance;
+    const total = att?.total ?? 0;
+    const responded = total - (att?.no_response ?? 0);
+    const responsePct = total > 0 ? Math.round((responded / total) * 100) : 0;
+
     return (
         <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-4">
@@ -493,6 +499,59 @@ function Overview() {
                     </div>
                 ))}
             </div>
+
+            <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
+                <h2 className="mb-4 text-lg font-semibold">Attendance Breakdown</h2>
+                <div className="grid gap-4 sm:grid-cols-3 mb-4">
+                    <div className="rounded-xl border bg-green-50 p-3">
+                        <div className="text-sm text-ink/60">Coming</div>
+                        <div className="text-2xl font-semibold">{att ? att.coming : "—"}</div>
+                        {att && total > 0 && (
+                            <div className="text-xs text-ink/50 mt-0.5">
+                                {Math.round((att.coming / total) * 100)}% of guests
+                            </div>
+                        )}
+                    </div>
+                    <div className="rounded-xl border bg-red-50 p-3">
+                        <div className="text-sm text-ink/60">Declined</div>
+                        <div className="text-2xl font-semibold">{att ? att.declined : "—"}</div>
+                        {att && total > 0 && (
+                            <div className="text-xs text-ink/50 mt-0.5">
+                                {Math.round((att.declined / total) * 100)}% of guests
+                            </div>
+                        )}
+                    </div>
+                    <div className="rounded-xl border bg-amber-50 p-3">
+                        <div className="text-sm text-ink/60">No Response</div>
+                        <div className="text-2xl font-semibold">{att ? att.no_response : "—"}</div>
+                        {att && total > 0 && (
+                            <div className="text-xs text-ink/50 mt-0.5">
+                                {Math.round((att.no_response / total) * 100)}% of guests
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {att && (
+                    <>
+                        <div className="mb-1 flex justify-between text-xs text-ink/60">
+                            <span>Response rate</span>
+                            <span>{responded} / {total} responded ({responsePct}%)</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-ink/10 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-ink/40 transition-all"
+                                style={{ width: `${responsePct}%` }}
+                            />
+                        </div>
+                        <div className="mt-3 flex gap-6 text-sm text-ink/70">
+                            <span>Ceremony: <span className="font-semibold text-ink">{att.attending_ceremony}</span></span>
+                            <span>Reception: <span className="font-semibold text-ink">{att.attending_reception}</span></span>
+                        </div>
+                    </>
+                )}
+            </div>
+
             <div className="rounded-2xl border bg-[#FAF7EC] p-4 shadow-sm">
                 <h2 className="mb-2 text-lg font-semibold">Recent Submissions (7 days)</h2>
                 <ul className="divide-y">

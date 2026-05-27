@@ -8,6 +8,7 @@ type PerforatedButtonProps = {
   className?: string
   arrowColor?: string
   external?: boolean
+  showArrow?: boolean
 }
 
 export default function PerforatedButton({
@@ -17,6 +18,7 @@ export default function PerforatedButton({
   className = '',
   arrowColor = '#EA6962',
   external = false,
+  showArrow = true,
 }: PerforatedButtonProps) {
   const tooth = 9
   const palette = {
@@ -56,13 +58,15 @@ export default function PerforatedButton({
       <span aria-hidden className="pointer-events-none absolute inset-1 rounded-[2px]" style={{ border: `1px solid ${palette.inner1}` }} />
       <span aria-hidden className="pointer-events-none absolute inset-[6px] rounded-[2px]" style={{ border: `1px solid ${palette.inner2}` }} />
       <span className="relative">{children}</span>
-      <svg
-        className="relative ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-        viewBox="0 0 24 24" fill="none" stroke={palette.arrow} strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      >
-        <path d="M5 12h14M13 5l7 7-7 7" />
-      </svg>
+      {showArrow && (
+        <svg
+          className="relative ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+          viewBox="0 0 24 24" fill="none" stroke={palette.arrow} strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+        >
+          <path d="M5 12h14M13 5l7 7-7 7" />
+        </svg>
+      )}
     </>
   )
 

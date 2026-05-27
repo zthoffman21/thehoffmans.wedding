@@ -31,3 +31,5 @@ seed.sql
 *.sw?
 
 .env
+
+*.md

@@ -32,9 +32,22 @@ export default function Landing() {
 			
 		  	<div className="grid">
 				<p className="text-sm/6 tracking-widest uppercase opacity-90">July 17, 2026 | 5:00 PM</p>
-				<div className="mt-8 flex items-center justify-center">
+				<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
 				<PerforatedButton to="/rsvp" variant="transparent" arrowColor="#fcfbf7d8">
 					RSVP
+				</PerforatedButton>
+				<PerforatedButton
+					to="https://www.google.com/maps/place/Aspen+%26+Alston/@40.3431241,-83.1855779,17z/data=!3m1!4b1!4m6!3m5!1s0x8838e705cd847ad5:0x9dc9dce561fde97b!8m2!3d40.34312!4d-83.183003!16s%2Fg%2F11vbybgc95?entry=ttu&g_ep=EgoyMDI1MDkyMi4wIKXMDSoASAFQAw%3D%3D"
+					variant="transparent"
+					external={true}
+					showArrow={false}
+				>
+					<span className="inline-flex items-center">
+						<svg viewBox="0 0 24 24" className="size-4 fill-none stroke-current mr-1.5" aria-hidden>
+							<path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10zm0-8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+						</svg>
+						Directions
+					</span>
 				</PerforatedButton>
 				</div>
 			</div>
