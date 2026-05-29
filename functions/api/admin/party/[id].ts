@@ -33,8 +33,8 @@ export const onRequest: PagesFunction<Env> = async ({ env, params, request }) =>
            display_name = COALESCE(?, display_name),
            contact_email = ?,
            contact_phone = ?,
-           reminder_opt_in = ?,
-           can_rsvp = ?,
+           reminder_opt_in = COALESCE(?, reminder_opt_in),
+           can_rsvp = COALESCE(?, can_rsvp),
            rsvp_deadline = ?
        WHERE id = ?`
     ).bind(
@@ -42,8 +42,8 @@ export const onRequest: PagesFunction<Env> = async ({ env, params, request }) =>
       body.display_name ?? null,
       body.contact_email ?? null,
       body.contact_phone ?? null,
-      Number(!!body.reminder_opt_in),
-      Number(!!body.can_rsvp),
+      body.reminder_opt_in === undefined ? null : Number(!!body.reminder_opt_in),
+      body.can_rsvp === undefined ? null : Number(!!body.can_rsvp),
       body.rsvp_deadline ?? null,
       id
     ).run();
