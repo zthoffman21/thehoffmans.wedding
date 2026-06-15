@@ -26,18 +26,54 @@ type RawSubmissionRow = {
     party_id: string;
     party_name: string | null;
     payload_json: string | null;
+    cursor_submitted_at: string;
     submitted_at: string;
     contact_email?: string | null;
     contact_phone?: string | null;
     reminder_opt_in?: number | null;
 };
 
+type SubmissionPayload = {
+    contact?: {
+        email?: string;
+    };
+    reminderOptIn?: boolean;
+    notes?: string;
+    members?: Array<{
+        memberId?: string;
+        attending?: {
+            ceremony?: boolean | null;
+            reception?: boolean | null;
+        };
+        dietary?: string;
+        notes?: string;
+    }>;
+};
+
+type MemberLookupRow = {
+    id: string;
+    full_name: string;
+};
+
+function parseCursor(cursor: string | null) {
+    if (!cursor) return null;
+
+    const separator = cursor.indexOf("|");
+    if (separator === -1) return null;
+
+    const submittedAt = cursor.slice(0, separator);
+    const id = cursor.slice(separator + 1);
+    return submittedAt && id ? { submittedAt, id } : null;
+}
+
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
     const url = new URL(request.url);
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "25", 10), 100);
-    const cursor = url.searchParams.get("cursor"); // ISO (submitted_at) string
+    const cursor = parseCursor(url.searchParams.get("cursor"));
 
-    const where = cursor ? `WHERE s.submitted_at < ?` : ``;
+    const where = cursor
+        ? `WHERE s.submitted_at < ? OR (s.submitted_at = ? AND s.id < ?)`
+        : ``;
 
     // Pull a page of submissions with party info + contact fields
     const stmt = env.DB.prepare(
@@ -47,6 +83,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       s.party_id,
       p.display_name AS party_name,
       s.payload_json,
+      s.submitted_at AS cursor_submitted_at,
       strftime('%Y-%m-%dT%H:%M:%SZ', submitted_at) AS submitted_at,
       s.contact_email,
       s.contact_phone,
@@ -60,19 +97,24 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
     );
 
     const res = cursor
-        ? await stmt.bind(cursor, limit + 1).all<RawSubmissionRow>()
+        ? await stmt
+              .bind(cursor.submittedAt, cursor.submittedAt, cursor.id, limit + 1)
+              .all<RawSubmissionRow>()
         : await stmt.bind(limit + 1).all<RawSubmissionRow>();
 
     const page = res.results ?? [];
     const hasMore = page.length > limit;
     const pageItems = hasMore ? page.slice(0, limit) : page;
-    const nextCursor = hasMore ? pageItems[pageItems.length - 1]!.submitted_at : null;
+    const lastItem = pageItems[pageItems.length - 1];
+    const nextCursor = hasMore && lastItem
+        ? `${lastItem.cursor_submitted_at}|${lastItem.id}`
+        : null;
 
     // Collect memberIds from this page to resolve names in one query
     const memberIds: string[] = [];
     for (const row of pageItems) {
         try {
-            const payload = JSON.parse(row.payload_json ?? "{}");
+            const payload = JSON.parse(row.payload_json ?? "{}") as SubmissionPayload;
             for (const m of payload?.members ?? []) {
                 const id = m?.memberId;
                 if (id && !memberIds.includes(id)) memberIds.push(id);
@@ -93,7 +135,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
     `;
         const { results: members } = await env.DB.prepare(sqlMembers)
             .bind(...memberIds)
-            .all<any>();
+            .all<MemberLookupRow>();
         for (const m of members ?? []) {
             memberMap.set(m.id, { full_name: m.full_name });
         }
@@ -102,9 +144,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
     // Flatten each submission into CSV-like rows
     const flat: FlatRow[] = [];
     for (const r of pageItems) {
-        let payload: any = {};
+        let payload: SubmissionPayload = {};
         try {
-            payload = JSON.parse(r.payload_json ?? "{}");
+            payload = JSON.parse(r.payload_json ?? "{}") as SubmissionPayload;
         } catch {
             payload = {};
         }
